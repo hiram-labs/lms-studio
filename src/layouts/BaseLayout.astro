@@ -1,0 +1,31 @@
+---
+import "../styles/global.css"
+
+const { title, description, ogImage } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description || "Training with impact."} />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="XRTEMIS" />
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="icon" href="/favicon.ico?" />
+        
+        <meta property="og:title" content={title || "XRTEMIS"} />
+        <meta property="og:description" content={description || "Training with impact."} />
+        <meta property="og:image" content={ogImage || "/image/default-og-image.jpg"} />
+        <meta property="og:url" content={Astro.request.url} />
+        <meta property="og:type" content="website" />
+
+        <title>XRTEMIS - {title}</title>
+    </head>
+    <body class="bg-[url('/images/background.png')] bg-cover bg-center bg-base-100 min-h-screen">
+        <div class="mx-auto" style="max-width: 1980px;">
+            <slot />
+        </div>
+    </body>
+</html>
