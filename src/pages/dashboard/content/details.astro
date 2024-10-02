@@ -1,0 +1,28 @@
+---
+import ErrorCapture from '../../../components/ErrorCapture.astro';
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+
+import C from "../../../libs/config"
+import { directus_client_auth } from "../../../libs/directus";
+import { getQueryParam } from "../../../libs/utils"
+
+import { readItems } from "@directus/sdk";
+
+let errors: any = []
+let contentResponse: any = null
+
+const contentID = getQueryParam(Astro.url, C.URL_QUERY_PARAM_ID)
+
+try {
+    contentResponse = await directus_client_auth.request(readItems('lms_content', {filter: {content_id: contentID}}))
+} catch (error) {
+    errors = (error as any)?.errors
+    console.error(error)
+}
+---
+
+<DashboardLayout title="content details">
+    <ErrorCapture errors={errors}>
+        {contentResponse}
+    </ErrorCapture>
+</DashboardLayout>
