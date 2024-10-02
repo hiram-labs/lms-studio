@@ -14,7 +14,7 @@ let contentResponse: any = []
 try {
     contentResponse = await directus_client_auth.request(readItems('lms_content'))
 } catch (error) {
-    errors = (error as any)?.errors
+    errors = (error as any)?.errors || [{message: error}]
     console.error(error)
 }
 

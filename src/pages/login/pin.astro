@@ -1,4 +1,5 @@
 ---
+import ErrorCapture from '../../components/ErrorCapture.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { directus_client_auth } from "../../libs/directus";
 
@@ -7,17 +8,26 @@ import { readItems } from "@directus/sdk";
 
 const currentYear = new Date().getFullYear();
 
+let errors: any = {}
+let pinResponse: any = []
+
 if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
-  const response = await directus_client_auth.request(readItems('lms_user_pin', {
-    filter: {pin: String(data.get("pin"))},
-    fields: ["token"]
-  }))
 
-  if(response.length && response[0]?.token) {
-    return Astro.rewrite(new Request(new URL("/landing/content", Astro.url), {
-      headers: {"x-static-token": response[0].token}
+  try {
+    pinResponse = await directus_client_auth.request(readItems('lms_user_pin', {
+      filter: {pin: String(data.get("pin"))},
+      fields: ["token"]
     }))
+
+    if(pinResponse.length && pinResponse[0]?.token) {
+      return Astro.rewrite(new Request(new URL("/landing/content", Astro.url), {
+        headers: {"x-static-token": pinResponse[0].token}
+      }))
+    }
+  } catch (error) {
+    errors = (error as any)?.errors || [{message: error}]
+    // console.error(error)
   }
 }
 ---
@@ -49,6 +59,9 @@ if (Astro.request.method === "POST") {
                 aria-label="Enter your pin"
               />
             </label>
+          </div>
+          <div class="mb-4">
+            <ErrorCapture errors={errors} />
           </div>
           <div>
             <button type="submit" class="btn btn-neutral w-full">Login</button>
