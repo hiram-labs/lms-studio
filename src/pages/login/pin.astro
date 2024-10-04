@@ -1,43 +1,44 @@
 ---
-import ErrorCapture from '../../components/ErrorCapture.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ErrorCapture from "../../components/ErrorCapture.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+import C from "../../libs/config"
 import { directus_client_auth } from "../../libs/directus";
 
 import { readItems } from "@directus/sdk";
 
-
-const currentYear = new Date().getFullYear();
-
 let errors: any = {}
 let pinResponse: any = []
 
+const currentYear = new Date().getFullYear();
+
 if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
-
+  
   try {
-    pinResponse = await directus_client_auth.request(readItems('lms_user_pin', {
+    pinResponse = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
       filter: {pin: String(data.get("pin"))},
       fields: ["token"]
     }))
 
     if(pinResponse.length && pinResponse[0]?.token) {
-      return Astro.rewrite(new Request(new URL("/landing/content", Astro.url), {
-        headers: {"x-static-token": pinResponse[0].token}
-      }))
+      Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, pinResponse[0].token, {path: "/"})
+      return Astro.redirect("/landing/content")
     }
   } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
-    // console.error(error)
+    console.error(error)
   }
 }
+
 ---
 
 <BaseLayout title="pin login">
   <div class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="text-center">
-      <img alt="logo" src="/images/logo.png" class="h-auto mx-auto" />
-      <div class="text-2xl font-semibold text-gray-800 uppercase tracking-wider my-4">training with impact</div>
+      <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
+      <div class="text-2xl font-semibold uppercase tracking-wider my-4">training with impact</div>
       <div class="text-xl font-bold my-5">Welcome</div>
     </div>
 
@@ -82,3 +83,9 @@ if (Astro.request.method === "POST") {
 
   </div>
 </BaseLayout>
+
+<script>
+  import {COOKIE_KEY_USER_STATIC_TOKEN} from "../../libs/config"
+
+  document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+</script>

@@ -44,7 +44,7 @@ const featuredContentResponse = getRandomSample(contentResponse, 5)
                 {featuredContentResponse.map((item: any) => (
                     <div class="carousel-item">
                         <a href={`/dashboard/content/details?${C.URL_QUERY_PARAM_ID}=${item.content_id}`}>
-                            <img src={item.content_image_url} class="rounded-box w-full h-80 object-cover" />
+                            <img src={item.content_image_url} alt="content-item-display-image" class="rounded-box w-full h-80 object-cover" />
                         </a>
                     </div>
                 ))}

@@ -1,10 +1,69 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import ErrorCapture from "../../../components/ErrorCapture.astro";
+
+import C from "../../../libs/config"
+import { directus_client_no_auth } from "../../../libs/directus";
+import { getQueryParam } from "../../../libs/utils"
+
+import { readItems, withToken } from "@directus/sdk";
+
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+if(!TOKEN) return Astro.redirect("/login/pin")
+
+let errors: any = []
+let contentResponse: any = {}
+
+const contentID = getQueryParam(Astro.url, C.URL_QUERY_PARAM_ID)
+
+try {
+    [contentResponse] = await directus_client_no_auth.request(withToken(TOKEN, readItems("lms_content", {filter: {content_id: contentID}})))
+} catch (error) {
+    errors = (error as any)?.errors || [{message: error}]
+    console.error(error)
+}
 
 ---
 
-<BaseLayout>
-    <div class="p-10 pt-20">
-        content
+<BaseLayout title="content details">
+    <div class="p-10">
+        <ErrorCapture errors={errors}>
+            <div class="flex justify-between w-full mb-4">
+                <div>
+                    <div class="tooltip tooltip-bottom" data-tip="back">
+                        <a href="javascript:window.history.back();" class="btn btn-circle">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                <path fill-rule="evenodd" d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="hidden">Back</span>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <div class="tooltip tooltip-bottom" data-tip="logout">
+                        <a href="/login/pin" class="btn btn-circle" aria-label="logout">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                <path fill-rule="evenodd" d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V15a.75.75 0 0 0-1.5 0v3.75a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5.25a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3V9A.75.75 0 1 0 9 9V5.25a1.5 1.5 0 0 1 1.5-1.5h6ZM5.78 8.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 0 0 0 1.06l3 3a.75.75 0 0 0 1.06-1.06l-1.72-1.72H15a.75.75 0 0 0 0-1.5H4.06l1.72-1.72a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="hidden">Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="hero place-items-start">
+                <div class="hero-content flex-col lg:flex-row">
+                  <img src={contentResponse?.content_image_url} class="max-w-sm rounded-lg shadow-2xl self-start" alt="content-item-display-image" />
+                  <div class="">
+                    <h1 class="text-5xl font-bold">{contentResponse?.content_title}</h1>
+                    <div class="divider"></div>
+                    <p class="py-2 text-gray-500 italic">{contentResponse?.content_description}</p>
+                    <div class="divider"></div>
+                    <p class="py-2">{contentResponse?.content_long_description}</p>
+                    <a href={contentResponse?.content_link} class="btn btn-neutral min-w-48">Start</a>
+                  </div>
+                </div>
+            </div>
+        </ErrorCapture>
     </div>
 </BaseLayout>
