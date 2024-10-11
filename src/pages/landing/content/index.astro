@@ -57,7 +57,7 @@ try{
                 {contentResponse.map((item: any) => (
                     <div class="card glass z-10">
                         <figure>
-                            <img src={item.content_image_url} alt="content-item-display-image" class="w-full h-64 object-cover" />
+                            <img src={`${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${item.content_image_url}`} alt="content-item-display-image" class="w-full h-64 object-cover" />
                         </figure>
                         <div class="card-body">
                         <h2 class="card-title">{item.content_title}</h2>
