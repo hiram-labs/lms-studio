@@ -8,7 +8,6 @@ import { directus_client_auth } from "../../libs/directus";
 import { readItems } from "@directus/sdk";
 
 let errors: any = {}
-let pinResponse: any = []
 
 const currentYear = new Date().getFullYear();
 
@@ -16,15 +15,13 @@ if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
   
   try {
-    pinResponse = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
+    let [{user_id: {unmasked_token}}] = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
       filter: {pin: String(data.get("pin"))},
-      fields: ["token"]
+      alias: {unmasked_token: "token"},
+      fields: ["user_id.unmasked_token"]
     }))
-
-    if(pinResponse.length && pinResponse[0]?.token) {
-      Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, pinResponse[0].token, {path: "/"})
-      return Astro.redirect("/landing/content")
-    }
+    Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmasked_token, {path: "/"})
+    return Astro.redirect("/landing/content")
   } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
     console.error(error)
