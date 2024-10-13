@@ -7,6 +7,7 @@ import { directus_client_no_auth } from "../../../libs/directus";
 import { getQueryParam } from "../../../libs/utils"
 
 import { readItems, withToken } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
 
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
 if(!TOKEN) return Astro.redirect("/login/pin")
@@ -20,7 +21,7 @@ try {
     [contentResponse] = await directus_client_no_auth.request(withToken(TOKEN, readItems("lms_content", {filter: {id: contentID}})))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
-    console.error(error)
+    errors.forEach((error: any) => {logger.error(error.message)});
 }
 
 ---

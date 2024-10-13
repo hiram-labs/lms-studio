@@ -7,6 +7,7 @@ import { directus_client_auth } from "../../../libs/directus";
 import { getRandomSample } from '../../../libs/utils'
 
 import { readItems } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
 
 let errors: any = []
 let contentResponse: any = []
@@ -15,7 +16,7 @@ try {
     contentResponse = await directus_client_auth.request(readItems('lms_content'))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
-    console.error(error)
+    errors.forEach((error: any) => {logger.error(error.message)});
 }
 
 // TODO:improve how featured content is determined for now we randomly pick 5 from content

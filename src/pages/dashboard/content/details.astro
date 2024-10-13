@@ -7,6 +7,7 @@ import { directus_client_auth } from "../../../libs/directus";
 import { getQueryParam } from "../../../libs/utils"
 
 import { readItems } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
 
 let errors: any = []
 let contentResponse: any = null
@@ -17,7 +18,7 @@ try {
     contentResponse = await directus_client_auth.request(readItems('lms_content', {filter: {id: contentID}}))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
-    console.error(error)
+    errors.forEach((error: any) => {logger.error(error.message)});
 }
 ---
 
