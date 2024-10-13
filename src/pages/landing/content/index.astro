@@ -1,4 +1,6 @@
 ---
+import ButtonContentStart from "../../../components/ButtonContentStart.astro";
+import ContentCard from "../../../components/ContentCard.astro";
 import ErrorCapture from "../../../components/ErrorCapture.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 
@@ -56,19 +58,10 @@ try{
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {contentResponse.map((item: any) => (
-                    <div class="card glass z-10">
-                        <figure>
-                            <img src={`${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${item.content_image_url}`} alt="content-item-display-image" class="w-full h-64 object-cover" />
-                        </figure>
-                        <div class="card-body">
-                        <h2 class="card-title">{item.content_title}</h2>
-                        <p>{item.content_description}</p>
-                        <div class="card-actions justify-end">
-                            <a href={item.content_link} class="btn btn-neutral w-full">Start</a>
-                            <a href={`/landing/content/details?${C.URL_QUERY_PARAM_ID}=${item.id}`} class="btn w-full">Details</a>
-                        </div>
-                        </div>
-                    </div>
+                    <ContentCard imageURL={item.content_image_url} title={item.content_title} description={item.content_description}>
+                        <ButtonContentStart contentLink={item.content_link} deepLink={item.content_deep_link} />
+                        <a href={`/landing/content/details?${C.URL_QUERY_PARAM_ID}=${item.id}`} class="btn w-full">Details</a>
+                    </ContentCard>
                 ))}
             </div>
         </ErrorCapture>

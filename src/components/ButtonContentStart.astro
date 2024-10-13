@@ -1,0 +1,38 @@
+---
+const {contentLink, deepLink} = Astro.props
+
+---
+
+<a href="#" class="btn btn-neutral w-full" data-content-start-cta data-content-link={contentLink} data-deep-link={deepLink}>
+    Start
+</a>
+
+<script>
+    import {DIRECTUS_FILE_ASSET_URL_PREFIX} from "../libs/config"
+
+    const ctas = document.querySelectorAll('[data-content-start-cta]');
+
+    ctas.forEach((cta) => {
+        cta.addEventListener('click', async (e: Event) => {
+            e.preventDefault();
+            const targetElement = (e.target as HTMLAnchorElement)
+
+            const contentLink = targetElement.dataset.contentLink || "#"
+            const deepLink = targetElement.dataset.deepLink || "#"
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            targetElement.after(iframe);
+
+            try {
+                iframe.src = deepLink;
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                throw new Error();
+            } catch (err) {
+                window.location.href = `${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`;
+            } finally {
+                targetElement.removeChild(iframe);
+            }
+        });
+    });
+</script>

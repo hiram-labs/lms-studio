@@ -1,0 +1,19 @@
+---
+import C from "../libs/config"
+
+const {imageURL, title, description} = Astro.props
+
+---
+
+<div class="card glass z-10">
+    <figure>
+        <img src={`${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${imageURL}`} alt="content-item-display-image" class="w-full h-64 object-cover" />
+    </figure>
+    <div class="card-body">
+        <h2 class="card-title">{title}</h2>
+        <p>{description}</p>
+        <div class="card-actions justify-end">
+            <slot/>
+        </div>
+    </div>
+</div>
