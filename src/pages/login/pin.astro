@@ -16,11 +16,13 @@ if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
   
   try {
-    let [{user_id: {unmasked_token}}] = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
+    const pinResponse = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
       filter: {pin: String(data.get("pin"))},
       alias: {unmasked_token: "token"},
       fields: ["user_id.unmasked_token"]
     }))
+    if(!pinResponse.length) throw new Error("Incorrect PIN.");
+    const [{user_id: {unmasked_token}}] = pinResponse
     Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmasked_token, {path: "/"})
     return Astro.redirect("/landing/content")
   } catch (error) {
