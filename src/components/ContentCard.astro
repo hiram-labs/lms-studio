@@ -7,7 +7,7 @@ const {imageURL, title, description} = Astro.props
 
 <div class="card glass z-10">
     <figure>
-        <img src={`${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${imageURL}`} alt="content-item-display-image" class="w-full h-64 object-cover" />
+        <img src={`${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${imageURL}?width=625&height=260&quality=50`} alt="content-item-display-image" class="w-full h-64 object-cover" />
     </figure>
     <div class="card-body">
         <h2 class="card-title">{title}</h2>
