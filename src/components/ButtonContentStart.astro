@@ -8,7 +8,8 @@ const {contentLink, deepLink} = Astro.props
 </a>
 
 <script>
-    import {DIRECTUS_FILE_ASSET_URL_PREFIX} from "../libs/config"
+    import {DIRECTUS_FILE_ASSET_URL_PREFIX, COOKIE_KEY_USER_STATIC_TOKEN} from "../libs/config"
+    import { getCookie } from "../libs/utils";
 
     const ctas = document.querySelectorAll('[data-content-start-cta]');
 
@@ -25,7 +26,8 @@ const {contentLink, deepLink} = Astro.props
             targetElement.after(iframe);
 
             try {
-                iframe.src = deepLink;
+                const token = getCookie(COOKIE_KEY_USER_STATIC_TOKEN)
+                iframe.src = `${deepLink}?user_token=${token}`;
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 throw new Error();
             } catch (err) {
