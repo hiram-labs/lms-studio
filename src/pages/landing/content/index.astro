@@ -5,7 +5,7 @@ import ErrorCapture from "../../../components/ErrorCapture.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 
 import C from "../../../libs/config"
-import { directus_client_no_auth } from "../../../libs/directus";
+import { directusClientNoAuth } from "../../../libs/directus";
 
 import { readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
@@ -18,8 +18,8 @@ let userResponse: any = {}
 let contentResponse: any = []
 
 try{
-    userResponse = await directus_client_no_auth.request<DirectusUser>(withToken(TOKEN, readMe()))
-    contentResponse = await directus_client_no_auth.request(withToken(TOKEN, readItems("lms_content")))
+    userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
+    contentResponse = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_content")))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
     errors.forEach((error: any) => {logger.error(error.message)});

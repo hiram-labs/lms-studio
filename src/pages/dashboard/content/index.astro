@@ -5,7 +5,7 @@ import ErrorCapture from '../../../components/ErrorCapture.astro';
 import DashboardLayout from '../../../layouts/DashboardLayout.astro';
 
 import C from "../../../libs/config"
-import { directus_client_auth } from "../../../libs/directus";
+import { directusClientAuth } from "../../../libs/directus";
 import { getRandomSample } from '../../../libs/utils'
 
 import { readItems } from "@directus/sdk";
@@ -16,7 +16,7 @@ let errors: any = []
 let contentResponse: any = []
 
 try {
-    contentResponse = await directus_client_auth.request(readItems('lms_content'))
+    contentResponse = await directusClientAuth.request(readItems('lms_content'))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
     errors.forEach((error: any) => {logger.error(error.message)});

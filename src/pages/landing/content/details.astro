@@ -3,7 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import ErrorCapture from "../../../components/ErrorCapture.astro";
 
 import C from "../../../libs/config"
-import { directus_client_no_auth } from "../../../libs/directus";
+import { directusClientNoAuth } from "../../../libs/directus";
 import { getQueryParam } from "../../../libs/utils"
 
 import { readItems, withToken } from "@directus/sdk";
@@ -19,7 +19,7 @@ let contentResponse: any = {}
 const contentID = getQueryParam(Astro.url, C.URL_QUERY_PARAM_ID)
 
 try {
-    [contentResponse] = await directus_client_no_auth.request(withToken(TOKEN, readItems("lms_content", {filter: {id: contentID}})))
+    [contentResponse] = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_content", {filter: {id: contentID}})))
 } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
     errors.forEach((error: any) => {logger.error(error.message)});

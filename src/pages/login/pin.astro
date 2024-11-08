@@ -3,7 +3,7 @@ import ErrorCapture from "../../components/ErrorCapture.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 
 import C from "../../libs/config"
-import { directus_client_auth } from "../../libs/directus";
+import { directusClientAuth } from "../../libs/directus";
 
 import { readItems } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
@@ -16,7 +16,7 @@ if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
   
   try {
-    const pinResponse = await directus_client_auth.request(readItems("lms_user_pin_assignment", {
+    const pinResponse = await directusClientAuth.request(readItems("lms_user_pin_assignment", {
       filter: {pin: String(data.get("pin"))},
       alias: {unmasked_token: "token"},
       fields: ["user_id.unmasked_token"]

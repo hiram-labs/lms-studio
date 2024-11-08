@@ -6,7 +6,8 @@ const PORT = import.meta.env.DIRECTUS_API_PORT || "8055";
 
 const directusUrl = `http://${HOST}:${PORT}`;
 
-export const directus_client_auth = createDirectus(directusUrl)
+export const directusClientAuth = createDirectus(directusUrl)
   .with(staticToken(TOKEN))
   .with(rest());
-export const directus_client_no_auth = createDirectus(directusUrl).with(rest());
+
+export const directusClientNoAuth = createDirectus(directusUrl).with(rest());
