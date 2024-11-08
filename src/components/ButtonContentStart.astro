@@ -25,16 +25,12 @@ const {contentLink, deepLink} = Astro.props
             iframe.style.display = 'none';
             targetElement.after(iframe);
 
-            try {
-                const token = getCookie(COOKIE_KEY_USER_STATIC_TOKEN)
-                iframe.src = `${deepLink}?user_token=${token}`;
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                throw new Error();
-            } catch (err) {
-                window.location.href = `${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`;
-            } finally {
-                targetElement.removeChild(iframe);
-            }
+            const token = getCookie(COOKIE_KEY_USER_STATIC_TOKEN)
+
+            // deeplink template => default://com.v360.pipe?module_name=com.v360.electricaltestkit
+            // NB must always include the module_name url param
+            iframe.src = `${deepLink}&user_token=${token}&module_url=${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`;
+            iframe.remove()
         });
     });
 </script>
