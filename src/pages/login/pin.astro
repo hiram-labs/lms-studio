@@ -16,8 +16,8 @@ if (Astro.request.method === "POST") {
   const data = await Astro.request.formData();
   
   try {
-    const pinResponse = await directusClientAuth.request(readItems("lms_user_pin_assignment", {
-      filter: {pin: String(data.get("pin"))},
+    const pinResponse = await directusClientAuth.request(readItems("lms_actor_access", {
+      filter: {access_pin: String(data.get("pin"))},
       alias: {unmasked_token: "token"},
       fields: ["user_id.unmasked_token"]
     }))
