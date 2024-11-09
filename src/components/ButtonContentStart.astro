@@ -8,7 +8,7 @@ const {contentLink, deepLink} = Astro.props
 </a>
 
 <script>
-    import {DIRECTUS_FILE_ASSET_URL_PREFIX, COOKIE_KEY_USER_STATIC_TOKEN} from "../libs/config"
+    import {DIRECTUS_FILE_ASSET_URL_PREFIX, COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../libs/config"
     import { getCookie } from "../libs/utils";
 
     const ctas = document.querySelectorAll('[data-content-start-cta]');
@@ -26,12 +26,16 @@ const {contentLink, deepLink} = Astro.props
             iframe.style.display = 'none';
             targetElement.after(iframe);
 
+            const org = getCookie(COOKIE_KEY_USER_ORG_ID)
             const token = getCookie(COOKIE_KEY_USER_STATIC_TOKEN)
 
+            const userURL = `${domain}/api/module-access/${org}/${token}`
+            const moduleURL =`${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`
             // deeplink template => default://com.v360.pipe?module_name=com.v360.electricaltestkit
             // NB must always include the module_name url param
-            iframe.src = `${deepLink}&user_url=${domain}/api/module-access/${token}&module_url=${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`;
+            iframe.src = `${deepLink}&user_url=${userURL}&module_url=${moduleURL}`;
             iframe.remove()
+            console.log(userURL)
         });
     });
 </script>

@@ -19,11 +19,19 @@ if (Astro.request.method === "POST") {
     const pinResponse = await directusClientAuth.request(readItems("lms_actor_access", {
       filter: {access_pin: String(data.get("pin"))},
       alias: {unmasked_token: "token"},
-      fields: ["user_id.unmasked_token"]
+      fields: ["user_id.unmasked_token", "organization_id.id"]
     }))
+
     if(!pinResponse.length) throw new Error("Incorrect PIN.");
-    const [{user_id: {unmasked_token}}] = pinResponse
-    Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmasked_token, {path: "/"})
+
+    const [{
+      user_id: {unmasked_token: unmaskedToken},
+      organization_id: {id: orgID}
+    }] = pinResponse
+
+    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgID, {path: "/"})
+    Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmaskedToken, {path: "/"})
+    
     return Astro.redirect("/landing/content")
   } catch (error) {
     errors = (error as any)?.errors || [{message: error}]
@@ -86,7 +94,8 @@ if (Astro.request.method === "POST") {
 </BaseLayout>
 
 <script>
-  import {COOKIE_KEY_USER_STATIC_TOKEN} from "../../libs/config"
+  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../../libs/config"
 
+  document.cookie = `${COOKIE_KEY_USER_ORG_ID}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 </script>
