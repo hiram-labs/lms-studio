@@ -21,7 +21,7 @@ try{
     userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
     contentResponse = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_content")))
 } catch (error) {
-    errors = (error as any)?.errors || [{message: error}]
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
 }
 

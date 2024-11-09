@@ -21,7 +21,7 @@ const contentID = getQueryParam(Astro.url, C.URL_QUERY_PARAM_ID)
 try {
     [contentResponse] = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_content", {filter: {id: contentID}})))
 } catch (error) {
-    errors = (error as any)?.errors || [{message: error}]
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
 }
 

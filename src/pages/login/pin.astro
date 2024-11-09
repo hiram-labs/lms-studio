@@ -34,7 +34,7 @@ if (Astro.request.method === "POST") {
     
     return Astro.redirect("/landing/content")
   } catch (error) {
-    errors = (error as any)?.errors || [{message: error}]
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
   }
 }
