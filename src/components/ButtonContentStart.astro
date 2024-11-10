@@ -35,7 +35,6 @@ const {contentLink, deepLink} = Astro.props
             // NB must always include the module_name url param
             iframe.src = `${deepLink}&user_url=${userURL}&module_url=${moduleURL}`;
             iframe.remove()
-            console.log(userURL)
         });
     });
 </script>
