@@ -1,6 +1,225 @@
 ---
-import ButtonAPKInstall from "../../../components/ButtonAPKInstall.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
 
 ---
 
-<ButtonAPKInstall  />
+
+<BaseLayout title="pin login">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <div class="text-center">
+            <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
+            <div class="text-2xl font-semibold uppercase tracking-wider my-4">training with impact</div>
+            <div class="text-xl font-bold my-5">Headset Onboarding</div>
+        </div>
+
+        <div class="my-8">
+            <ul class="steps">
+                <li class="step" data-step-id="request-web-usb">Request WebUSB</li>
+                <li class="step" data-step-id="select-device">Select Device</li>
+                <li class="step" data-step-id="authenticate-connection">Authenticate Connection</li>
+                <li class="step" data-step-id="download-apk">Download APK</li>
+                <li class="step" data-step-id="install-apk">Install APK</li>
+                <li class="step" data-step-id="remove-device">Remove Device</li>
+            </ul>
+        </div>
+
+        <div class="card w-full max-w-6xl min-h-96 bg-base-100 shadow-xl">
+
+            <div class="card-body">
+                <div class="flex flex-grow  h-full items-end">
+                    <div class="prose">
+                        <h1>Check browser for WebUSB support</h1>
+                        <p>
+                            To proceed with onboarding, WebUSB is required to install the APK directly onto your device. Your browser must support WebUSB for this to work. We recommend using the latest versions of Chrome or Edge, as these are known to be fully compatible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a id="apk-install-cta" href="#" class="btn btn-neutral">Install APK</a>
+</BaseLayout>
+
+<script>
+    import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
+    import { PackageManager, type PackageManagerListPackagesResult } from "@yume-chan/android-bin";
+    import { type ReadableWritablePair, Consumable } from "@yume-chan/stream-extra";
+    import { type AdbPacketData,type AdbPacketInit, Adb, AdbDaemonTransport } from "@yume-chan/adb";
+    import { AdbDaemonWebUsbDeviceManager, AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+    import { wrapPromiseWithTimeout, fetchApkFileWithProgress } from "../../../libs/utils"
+
+    const PIPE_APP_PKG_NAME = "com.pvr.picocast"
+    const PIPE_APP_APK_URL = "https://cdn.metal.hiramlabs.com/public/xrtemis-pipe-app.apk"
+
+    const progressStruct: {
+        data: NodeListOf<HTMLElement>
+        success(e: HTMLElement): void
+        error(e: HTMLElement): void
+        reset(): void;
+        complete(): void;
+    } = {
+        data: document.querySelectorAll<HTMLElement>("li.step"),
+        success(currentElement:HTMLElement){
+            this.data.forEach(siblingElement=>{
+                siblingElement.classList.remove("step-error", "step-warning")
+                siblingElement.removeAttribute("data-content")
+                // siblingElement comes before currentElement.
+                if (siblingElement.compareDocumentPosition(currentElement) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                    siblingElement.classList.add("step-success")
+                    siblingElement.dataset.content = "✓"
+                }
+            })
+            currentElement.classList.add("step-success")
+            currentElement.dataset.content = "✓"
+            currentElement.nextElementSibling?.classList.add("step-warning")
+            
+        },
+        error(currentElement:HTMLElement){
+            currentElement.classList.add("step-error")
+            currentElement.dataset.content = "✗"
+        },
+        reset(){
+            this.data.forEach(siblingElement=>{
+                siblingElement.classList.remove("step-success", "step-error", "step-warning")
+                siblingElement.removeAttribute("data-content")
+            })
+        },
+        complete(){
+            this.data.forEach(siblingElement=>{
+                siblingElement.classList.remove("step-error", "step-warning")
+                siblingElement.classList.add("step-success")
+                siblingElement.dataset.content = "✓"
+            })
+        }
+    }
+
+    const notifyStep= (status: "SUCCESS" | "ERROR" | "RESET" | "COMPLETE", stepId?: string) => {
+        const currentStep = document.querySelector(`[data-step-id=${stepId}]`) as HTMLElement // bug prone
+        switch (status) {
+            case "SUCCESS": {
+                progressStruct.success(currentStep)
+                break;
+            }
+            case "ERROR": {
+                progressStruct.error(currentStep)
+                break;
+            }
+            case "RESET": {
+                progressStruct.reset()
+                break;
+            }
+            case "COMPLETE": {
+                progressStruct.complete()
+                break;
+            }
+            default:
+                break;
+        }
+        
+    }
+
+    // --- handle start installing apk on btn click ---
+    const cta = document.getElementById("apk-install-cta");
+    if(cta) {
+        cta.addEventListener('click', async (e: Event) => {
+            e.preventDefault();
+            let manager:  AdbDaemonWebUsbDeviceManager | undefined
+            let adb: Adb | undefined
+
+            try {
+                manager = AdbDaemonWebUsbDeviceManager.BROWSER;
+                if (!manager){
+                    const error = new Error("WebUSB is not supported in this browser!");
+                    error.name = "WebUSBError"
+                    throw error;
+                }
+                notifyStep("SUCCESS", "request-web-usb")
+    
+    
+                const device: AdbDaemonWebUsbDevice | undefined = await manager.requestDevice();
+                if (!device) {
+                    notifyStep("RESET")
+                    return
+                }
+                const connection: ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>> = await device.connect();
+                notifyStep("SUCCESS", "select-device")
+
+                const credentialStore: AdbWebCredentialStore = new AdbWebCredentialStore()
+                const transport: AdbDaemonTransport = await wrapPromiseWithTimeout(
+                    AdbDaemonTransport.authenticate({ serial: device.serial, connection, credentialStore }),
+                    30000,
+                    () => {} // TODO: add spinner
+                );
+                notifyStep("SUCCESS", "authenticate-connection")
+
+                adb = new Adb(transport);
+                const pm = new PackageManager(adb);
+                
+                const packages = pm.listPackages()
+                for await (const pkg of packages){
+                    if(pkg.packageName === PIPE_APP_PKG_NAME){
+                        notifyStep("COMPLETE")
+                        return
+                    }
+                }
+
+                const {fileSize, file} = await fetchApkFileWithProgress(
+                    PIPE_APP_APK_URL,
+                    () => {} // TODO: add progress indicator
+                )
+                notifyStep("SUCCESS", "download-apk")
+
+
+                await pm.installStream(fileSize, file)
+                notifyStep("SUCCESS", "install-apk")
+                
+            } catch (error) {
+                if(error instanceof Error && error.name === "WebUSBError"){
+                    notifyStep("ERROR", "request-web-usb")
+                    alert(error)
+                }
+                if (error instanceof Error && error.name === "NetworkError") {
+                    notifyStep("ERROR", "select-device")
+                    alert(error)
+                }
+                if (error instanceof Error && error.name === "OperationTimeout") {
+                    notifyStep("ERROR", "authenticate-connection")
+                    alert(error)
+                }
+                if (error instanceof Error && error.name === "APKFetchError") {
+                    notifyStep("ERROR", "download-apk")
+                    alert(error)
+                }
+
+                alert(error)
+            } finally {
+                if(adb) await adb.close()
+                if(manager) (await manager.getDevices()).map(device => device.raw.forget())
+            }
+        });
+    };
+
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "request-web-usb")
+    // }, 5000);
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "select-device")
+    // }, 10000);
+    // setTimeout(() => {
+    //     notifyStep("ERROR", "authenticate-connection")
+    // }, 12000);
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "authenticate-connection")
+    // }, 15000);
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "download-apk")
+    // }, 20000);
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "install-apk")
+    // }, 25000);
+    // setTimeout(() => {
+    //     notifyStep("SUCCESS", "remove-device")
+    // }, 30000);
+</script>

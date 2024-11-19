@@ -28,7 +28,6 @@ export function getCookie(name: string) {
   if (parts.length === 2) return parts.pop()!.split(";").shift();
 }
 
-export const OPERATION_TIMED_OUT_ERROR_MESSAGE = "Operation timed out";
 export function wrapPromiseWithTimeout<T>(
   promise: Promise<T>,
   delay: number,
@@ -39,7 +38,11 @@ export function wrapPromiseWithTimeout<T>(
     new Promise<T>((_, reject) => {
       onWait();
       setTimeout(() => {
-        reject(OPERATION_TIMED_OUT_ERROR_MESSAGE);
+        const error = new Error(
+          `The promise could not resolve before the time out of ${delay}ms`
+        );
+        error.name = "PromiseTimeout";
+        reject(error);
       }, delay);
     }),
   ]);
@@ -49,14 +52,26 @@ export async function fetchApkFileWithProgress(
   url: string,
   onProgress: (percentage: number) => void
 ) {
+  const error = new Error();
+  error.name = "APKFetchError";
+
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`APKFetchError: Failed to fetch APK file.`);
+
+  if (!response.ok) {
+    error.message = "Failed to fetch APK file!";
+    throw error;
+  }
 
   const contentLength = response.headers.get("Content-Length");
-  if (!contentLength)
-    throw new Error("APKFetchError: Failed to calculate APK file size.");
-  if (!response.body)
-    throw new Error("APKFetchError: Failed to get response body.");
+  if (!contentLength) {
+    error.message = "Failed to calculate APK file size!";
+    throw error;
+  }
+
+  if (!response.body) {
+    error.message = "Failed to get response body!";
+    throw error;
+  }
 
   const total = parseInt(contentLength, 10);
   let loaded = 0;
@@ -78,7 +93,6 @@ export async function fetchApkFileWithProgress(
             push();
           })
           .catch((err) => {
-            console.error("Stream error:", err);
             controller.error(err);
           });
       }
