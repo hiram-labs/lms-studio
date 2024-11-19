@@ -15,6 +15,11 @@
     "@astrojs/tailwind": "^5.1.1",
     "@directus/sdk": "^17.0.1",
     "@inox-tools/runtime-logger": "^0.3.4",
+    "@yume-chan/adb": "^0.0.24",
+    "@yume-chan/adb-credential-web": "^0.0.24",
+    "@yume-chan/adb-daemon-webusb": "^0.0.24",
+    "@yume-chan/android-bin": "^0.0.24",
+    "@yume-chan/stream-extra": "^0.0.24",
     "astro": "^4.15.9",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2"
