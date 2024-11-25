@@ -1,0 +1,28 @@
+---
+const {stepId} = Astro.props
+
+---
+
+<div data-step-cards data-step-card-id={stepId}>
+    <div class="flex flex-col lg:flex-row flex-grow">
+        <div class="w-full lg:w-9/12 lg:self-end">
+            <div class="prose">
+                <h1>Welcome to the Onboarding Process</h1>
+                <p>
+                    Welcome! This onboarding process will guide you through the necessary steps to set up your headset and ensure it's ready for use. 
+                </p>
+                <p>
+                    Before we begin, you need to enable Developer Mode on your headset. This is a crucial step that allows you to install and configure the required software. To enable Developer Mode, follow the instructions provided in your headset's settings menu. If you're unsure how to do this, please refer to the official documentation for your headset model.
+                </p>
+                <p>
+                    Once Developer Mode is enabled, we'll proceed with the installation and setup steps. Please ensure your headset is connected to your computer and ready for the next phase of the process.
+                </p>
+            </div>
+        </div>
+        <div class="w-full lg:w-3/12 self-center flex justify-center">
+            <a id="apk-install-cta" href="#" class="btn btn-neutral rounded-full w-32 h-32 flex items-center justify-center text-lg font-bold shadow-inner border border-neutral-500 hover:shadow-xl active:shadow-sm transform active:scale-95 transition-all duration-200">
+                Push Start
+            </a>
+        </div>
+    </div>
+</div>

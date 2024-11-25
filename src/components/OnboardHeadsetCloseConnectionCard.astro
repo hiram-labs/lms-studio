@@ -1,0 +1,28 @@
+---
+import OnboardHeadsetErrorAlert from "./OnboardHeadsetErrorAlert.astro"
+
+const {stepId} = Astro.props
+
+---
+
+<div class="hidden" data-step-cards data-step-card-id={stepId}>
+    <OnboardHeadsetErrorAlert />
+    <div class="flex flex-col lg:flex-row flex-grow">
+        <div class="w-full lg:w-4/6 lg:self-end">
+            <div class="text-start" data-step-error-group>
+                <span class="loading loading-dots size-48 text-base-300"></span>
+            </div>
+            <div class="prose">
+                <h1>Closing the Device Connection</h1>
+                <p>
+                    The connection to the device is being closed and unpaired. You can now disconnect your headset from your computer.
+                </p>
+            </div>
+        </div>
+        <div class="w-full lg:w-2/6 self-center flex justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="#FFF" fill="currentColor" class="size-28" stroke-width="0.65">
+                <path d="m20.7 19.3-1-1c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l1 1c.2.2.5.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM14 22c0 .6.4 1 1 1s1-.4 1-1v-2c0-.6-.4-1-1-1s-1 .4-1 1v2zm8-8h-2c-.6 0-1 .4-1 1s.4 1 1 1h2c.6 0 1-.4 1-1s-.4-1-1-1zm-1.3-5.6c0-1.4-.5-2.6-1.5-3.6S17 3.3 15.6 3.3 13 3.8 12 4.8L9.8 7c-.4.4-.4 1 0 1.4s1 .4 1.4 0l2.2-2.2c1.2-1.2 3.2-1.2 4.4 0 .6.6.9 1.4.9 2.2 0 .8-.3 1.6-.9 2.2l-2.2 2.2c-.4.4-.4 1 0 1.4.2.2.5.3.7.3s.5-.1.7-.3l2.2-2.2c1-1 1.5-2.2 1.5-3.6zM3.3 15.6c0 1.4.5 2.6 1.5 3.6s2.2 1.5 3.6 1.5 2.6-.5 3.6-1.5l2.2-2.2c.4-.4.4-1 0-1.4s-1-.4-1.4 0l-2.2 2.2c-1.2 1.2-3.2 1.2-4.4 0-.6-.6-.9-1.4-.9-2.2 0-.8.3-1.6.9-2.2l2.2-2.2c.4-.4.4-1 0-1.4s-1-.4-1.4 0L4.8 12c-1 1-1.5 2.2-1.5 3.6zM5.7 4.3l-1-1c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l1 1c.2.2.4.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4zM10 4V2c0-.6-.4-1-1-1s-1 .4-1 1v2c0 .6.4 1 1 1s1-.4 1-1zm-6 6c.6 0 1-.4 1-1s-.4-1-1-1H2c-.6 0-1 .4-1 1s.4 1 1 1h2z"/>
+            </svg>
+        </div>
+    </div>
+</div>
