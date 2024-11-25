@@ -77,28 +77,52 @@ export async function fetchApkFileWithProgress(
   let loaded = 0;
 
   const reader = response.body.getReader();
-  const stream = new ReadableStream({
-    start(controller) {
-      function push() {
-        reader
-          .read()
-          .then(({ done, value }) => {
-            if (done) {
-              controller.close();
-              return;
-            }
+  const chunks: Uint8Array[] = [];
+
+  await new Promise<void>((resolve, reject) => {
+    function read() {
+      reader
+        .read()
+        .then(({ done, value }) => {
+          if (done) {
+            resolve();
+            return;
+          }
+
+          if (value) {
+            chunks.push(value);
             loaded += value.length;
-            onProgress((loaded / total) * 100);
-            controller.enqueue(value);
-            push();
-          })
-          .catch((err) => {
-            controller.error(err);
-          });
-      }
-      push();
+            onProgress(Math.round((loaded / total) * 100));
+          }
+
+          read();
+        })
+        .catch(reject);
+    }
+    read();
+  });
+
+  // Combine chunks into a single streamable file
+  const completeFile = new Uint8Array(
+    chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+  );
+  let offset = 0;
+  for (const chunk of chunks) {
+    completeFile.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  // Create a new ReadableStream from the complete file
+  const fileStream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(completeFile);
+      controller.close();
     },
   }) as unknown as ReadableStreamType<Uint8Array>;
 
-  return { fileSize: parseInt(contentLength, 10), file: stream };
+  return { fileSize: total, file: fileStream };
+}
+
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
