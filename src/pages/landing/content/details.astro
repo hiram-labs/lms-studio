@@ -8,7 +8,7 @@ import { getQueryParam } from "../../../libs/utils"
 
 import { readItems, withToken } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
-import ButtonContentStart from "../../../components/ButtonContentStart.astro";
+import ContentStartButton from "../../../components/ContentStartButton.astro";
 
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
 if(!TOKEN) return Astro.redirect("/login/pin")
@@ -62,7 +62,7 @@ try {
                     <p class="py-2 text-gray-500 italic">{contentResponse?.content_description}</p>
                     <div class="divider"></div>
                     <p class="py-2">{contentResponse?.content_long_description}</p>
-                    <ButtonContentStart contentLink={contentResponse?.content_link} deepLink={contentResponse?.content_deep_link} />
+                    <ContentStartButton contentLink={contentResponse?.content_link} deepLink={contentResponse?.content_deep_link} />
                   </div>
                 </div>
             </div>
