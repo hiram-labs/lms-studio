@@ -20,11 +20,12 @@ const originURL = Astro.url.origin
             <div class="sticky top-12 self-start px-8 pb-16 lg:border-l">
                 <div class="prose">
                     <h4>Useful Links</h4>
-                    <ui>
+                    <ul>
                         <li><a href={C.LRS_SITE_URL}">LRS Site</a></li>
                         <li><a href={originURL}>Studio Site</a></li>
                         <li><a href={C.DIRECTUS_SITE_URL}>Directus Site</a></li>
-                    </ui>
+                        <li><a href={`${originURL}/landing/onboard/headset`}>Headset Onboarding</a></li>
+                    </ul>
                 </div>
             </div>
         </div>

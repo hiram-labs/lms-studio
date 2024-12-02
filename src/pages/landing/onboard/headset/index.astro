@@ -13,7 +13,7 @@ import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCom
 ---
 
 
-<BaseLayout title="onboard headset">
+<BaseLayout title="pin login">
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
 
         <div class="text-center">
@@ -56,10 +56,8 @@ import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCom
     import { type AdbPacketData,type AdbPacketInit, Adb, AdbDaemonTransport } from "@yume-chan/adb";
     import { AdbDaemonWebUsbDeviceManager, AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
 
-    import { wrapPromiseWithTimeout, fetchApkFileWithProgress, delay } from "../../../../libs/utils"
-
-    const PIPE_APP_PKG_NAME = "com.meta.media.template"
-    const PIPE_APP_APK_URL = "https://cdn.metal.hiramlabs.com/public/xrtemis-pipe-app.apk"
+    import { wrapPromiseWithTimeout, fetchApkFileWithProgress, delay } from "../../../../libs/utils";
+    import { PIPE_APP_APK_URL, PIPE_APP_PKG_NAME } from "../../../../libs/config";
 
     const progressStruct: {
         stepElements: NodeListOf<HTMLElement>
