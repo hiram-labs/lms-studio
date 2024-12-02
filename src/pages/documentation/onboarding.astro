@@ -1,0 +1,32 @@
+---
+import DocumentationLayout from "../../layouts/DocumentationLayout.astro";
+
+import { Content } from './collection/onboarding.mdx';
+
+import C from "../../libs/config"
+
+const originURL = Astro.url.origin
+
+---
+
+<DocumentationLayout title="onboarding documentation">
+    <div class="flex flex-col-reverse lg:flex-row">
+        <div class="px-8">
+            <div class="prose">
+                <Content />
+            </div>
+        </div>
+        <div class="flex">
+            <div class="sticky top-12 self-start px-8 pb-16 lg:border-l">
+                <div class="prose">
+                    <h4>Useful Links</h4>
+                    <ui>
+                        <li><a href={C.LRS_SITE_URL}">LRS Site</a></li>
+                        <li><a href={originURL}>Studio Site</a></li>
+                        <li><a href={C.DIRECTUS_SITE_URL}>Directus Site</a></li>
+                    </ui>
+                </div>
+            </div>
+        </div>
+    </div>
+</DocumentationLayout>
