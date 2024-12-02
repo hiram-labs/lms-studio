@@ -23,8 +23,8 @@ const { title, description, ogImage } = Astro.props;
 
         <title>XRTEMIS - {title}</title>
     </head>
-    <body class="bg-[url('/images/background.png')] bg-cover bg-center bg-base-100 min-h-screen">
-        <div class="mx-auto" style="max-width: 1980px;">
+    <body class="bg-[url('/images/background.png')] bg-cover bg-center bg-base-100 min-h-screen bg-fixed">
+        <div class="mx-auto" style="max-width: 1440px;">
             <slot />
         </div>
     </body>
