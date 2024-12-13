@@ -7,9 +7,6 @@ export const LRS_XAPI_ENDPOINT = `${LRS_SITE_URL}/data/xAPI`;
 export const DIRECTUS_SITE_URL = import.meta.env.PUBLIC_DIRECTUS_SITE_URL;
 export const DIRECTUS_FILE_ASSET_URL_PREFIX = `${DIRECTUS_SITE_URL}/assets/`;
 
-export const PIPE_APP_PKG_NAME = import.meta.env.PUBLIC_PIPE_APP_PKG_NAME;
-export const PIPE_APP_APK_URL = import.meta.env.PUBLIC_PIPE_APP_APK_URL;
-
 // do not import default values below into a <script> tag as this may leak private details. Use corresponding name exports above
 export default {
   URL_QUERY_PARAM_ID: "id",
@@ -19,6 +16,4 @@ export default {
   DIRECTUS_FILE_ASSET_URL_PREFIX,
   COOKIE_KEY_USER_ORG_ID,
   COOKIE_KEY_USER_STATIC_TOKEN,
-  PIPE_APP_PKG_NAME,
-  PIPE_APP_APK_URL,
 };
