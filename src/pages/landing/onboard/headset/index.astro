@@ -9,12 +9,40 @@ import OnboardHeadsetApkDownloadCard from "../../../../components/OnboardHeadset
 import OnboardHeadsetApkInstallCard from "../../../../components/OnboardHeadsetApkInstallCard.astro";
 import OnboardHeadsetCloseConnectionCard from "../../../../components/OnboardHeadsetCloseConnectionCard.astro";
 import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCompleteCard.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+
+import C from "../../../../libs/config";
+import { directusClientAuth } from "../../../../libs/directus";
+
+import { readItems } from "@directus/sdk";
+import { logger } from "@it-astro:logger";
+
+let errors: any = []
+let appAttrResponse: any = {}
+
+let PIPE_APP_APK_URL = ""
+let PIPE_APP_PKG_NAME = ""
+
+try{
+    appAttrResponse = await directusClientAuth.request(readItems("lms_application_attribute_assignment", {
+      filter: {application_name: "pipe_application"},
+      fields: ["attribute_name", "attribute_text", "attribute_file"]
+    }))
+    PIPE_APP_APK_URL = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_file").map((item:any)=>item["attribute_file"])[0]
+    PIPE_APP_PKG_NAME = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_package_name").map((item:any)=>item["attribute_text"])[0]
+    if(!PIPE_APP_APK_URL) throw new Error("Could not retrieve a value for pipe_application attribute apk_file");
+    if(!PIPE_APP_PKG_NAME) throw new Error("Could not retrieve a value for pipe_application attribute apk_package_name");
+    PIPE_APP_APK_URL = `${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${PIPE_APP_APK_URL}?download=`
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
 
 ---
 
 
-<BaseLayout title="pin login">
-    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+<BaseLayout title="onboard headset">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4" data-pipe-app-attr data-pipe-app-apk-url={PIPE_APP_APK_URL} data-pipe-app-pkg-name={PIPE_APP_PKG_NAME}>
 
         <div class="text-center">
             <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
@@ -35,14 +63,16 @@ import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCom
 
         <div class="card w-full max-w-5xl min-h-96 bg-base-100 shadow-xl">
             <div class="card-body">
-                <OnboardHeadsetWelcomeCard stepId="onboarding-welcome"/>
-                <OnboardHeadsetWebUsbSupportCard stepId="verify-support"/>
-                <OnboardHeadsetDeviceSelectionCard stepId="select-device" />
-                <OnboardHeadsetOpenConnectionCard stepId="open-connection"/>
-                <OnboardHeadsetApkDownloadCard stepId="download-apk"/>
-                <OnboardHeadsetApkInstallCard stepId="install-apk"/>
-                <OnboardHeadsetCloseConnectionCard stepId="close-connection"/>
-                <OnboardHeadsetCompleteCard stepId="onboarding-complete"/>
+                <ErrorCapture errors={errors}>
+                    <OnboardHeadsetWelcomeCard stepId="onboarding-welcome"/>
+                    <OnboardHeadsetWebUsbSupportCard stepId="verify-support"/>
+                    <OnboardHeadsetDeviceSelectionCard stepId="select-device" />
+                    <OnboardHeadsetOpenConnectionCard stepId="open-connection"/>
+                    <OnboardHeadsetApkDownloadCard stepId="download-apk"/>
+                    <OnboardHeadsetApkInstallCard stepId="install-apk"/>
+                    <OnboardHeadsetCloseConnectionCard stepId="close-connection"/>
+                    <OnboardHeadsetCompleteCard stepId="onboarding-complete"/>
+                </ErrorCapture>
             </div>
         </div>
         <CopyrightFooter />
@@ -57,7 +87,10 @@ import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCom
     import { AdbDaemonWebUsbDeviceManager, AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
 
     import { wrapPromiseWithTimeout, fetchApkFileWithProgress, delay } from "../../../../libs/utils";
-    import { PIPE_APP_APK_URL, PIPE_APP_PKG_NAME } from "../../../../libs/config";
+
+    const elem = document.querySelector('[data-pipe-app-attr]') as HTMLElement;
+    const PIPE_APP_APK_URL = elem.dataset.pipeAppApkUrl!;
+    const PIPE_APP_PKG_NAME = elem.dataset.pipeAppPkgName!;
 
     const progressStruct: {
         stepElements: NodeListOf<HTMLElement>
@@ -301,7 +334,7 @@ import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCom
                     await progressNotification("ERROR", DOWNLOAD_APK, async (stepElement) => {
                         progressStruct.stepCardErrorAlertHandler(stepElement, error)
                     })
-                } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("failedd to fetch")) {
+                } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("failed to fetch")) {
                     // error reaching the server hosting apk file [maybe CORS/TIMEOUT/SSL]
                     await progressNotification("ERROR", DOWNLOAD_APK, async (stepElement) => {
                         progressStruct.stepCardErrorAlertHandler(stepElement, error)
