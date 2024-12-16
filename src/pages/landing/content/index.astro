@@ -1,6 +1,7 @@
 ---
 import ContentStartButton from "../../../components/ContentStartButton.astro";
 import ContentCard from "../../../components/ContentCard.astro";
+import ContentEmpty from "../../../components/ContentEmpty.astro";
 import ErrorCapture from "../../../components/ErrorCapture.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 
@@ -57,14 +58,20 @@ try{
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {contentResponse.map((item: any) => (
-                    <ContentCard imageURL={item.content_image_url} title={item.content_title} description={item.content_description}>
-                        <ContentStartButton contentLink={item.content_link} deepLink={item.content_deep_link} />
-                        <a href={`/landing/content/details?${C.URL_QUERY_PARAM_ID}=${item.id}`} class="btn w-full">Details</a>
-                    </ContentCard>
-                ))}
-            </div>
+            {
+                contentResponse.length
+                ?
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {contentResponse.map((item: any) => (
+                        <ContentCard imageURL={item.content_image_url} title={item.content_title} description={item.content_description}>
+                            <ContentStartButton contentLink={item.content_link} deepLink={item.content_deep_link} />
+                            <a href={`/landing/content/details?${C.URL_QUERY_PARAM_ID}=${item.id}`} class="btn w-full">Details</a>
+                        </ContentCard>
+                    ))}
+                </div>
+                :
+                <ContentEmpty />
+            }
         </ErrorCapture>
 
         <CopyrightFooter />
