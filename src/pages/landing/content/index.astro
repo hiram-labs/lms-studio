@@ -40,7 +40,7 @@ try{
         <ErrorCapture errors={errors}>
             <div class="flex justify-between w-full">
                 <div class="prose">
-                    <h1 id="browse-all-content-heading" class="mb-10">
+                    <h1 id="browse-all-content-heading" class="mb-10 reveal">
                         <a aria-hidden="true" tabindex="-1" href="#browse-all-content-heading" class="no-underline">
                             <span class="mr-1 opacity-20 hover:opacity-60 text-base font-bold inline-block align-middle relative -mt-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
@@ -49,7 +49,7 @@ try{
                                 </svg>
                             </span>
                         </a>
-                        Welcome back,&nbsp;&nbsp;<span class="text-yellow-500 italic">{userResponse.first_name} {userResponse.last_name}!</span>
+                        <span class="italic">Welcome back, <span style="color:#c2d500;">{userResponse.first_name} {userResponse.last_name}!</span></span>
                     </h1>
                 </div>
                 <div>
