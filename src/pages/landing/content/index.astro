@@ -12,8 +12,9 @@ import { readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
 import CopyrightFooter from "../../../components/CopyrightFooter.astro";
 
+const ORG_ID = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
-if(!TOKEN) return Astro.redirect("/login/pin")
+if(!ORG_ID || !TOKEN) return Astro.redirect("/login/pin")
 
 let errors: any = []
 let userResponse: any = {}
@@ -21,7 +22,12 @@ let contentResponse: any = []
 
 try{
     userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
-    contentResponse = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_content")))
+    contentResponse = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_organization_content_assignment", {
+        filter: {organization_id: ORG_ID},
+        sort: ["content_id.content_title"],
+        fields: ["content_id.*"]
+    })))
+    contentResponse = contentResponse.map((item:any) => item["content_id"] )
 } catch (error) {
     errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
