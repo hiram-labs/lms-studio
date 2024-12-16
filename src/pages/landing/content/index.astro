@@ -9,6 +9,7 @@ import { directusClientNoAuth } from "../../../libs/directus";
 
 import { readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
+import CopyrightFooter from "../../../components/CopyrightFooter.astro";
 
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
 if(!TOKEN) return Astro.redirect("/login/pin")
@@ -65,5 +66,7 @@ try{
                 ))}
             </div>
         </ErrorCapture>
+
+        <CopyrightFooter />
     </div>
 </BaseLayout>
