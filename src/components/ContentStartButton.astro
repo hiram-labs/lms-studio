@@ -33,8 +33,15 @@ const {contentLink, deepLink} = Astro.props
             const moduleURL =`${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`
             // deeplink template => default://com.v360.pipe?module_name=com.v360.electricaltestkit
             // NB must always include the module_name url param
-            iframe.src = `${deepLink}&user_url=${userURL}&module_url=${moduleURL}`;
-            iframe.remove()
+            const moduleStartUri = `${deepLink}&user_url=${userURL}&module_url=${moduleURL}`
+
+            try {
+                Android.onModuleStartTrigger(moduleStartUri)
+                // TODO: send the error to an api endpoint
+            } catch (error) {
+                iframe.src = moduleStartUri;
+                iframe.remove()
+            }
         });
     });
 </script>
