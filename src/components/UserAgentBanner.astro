@@ -1,0 +1,53 @@
+---
+import { UAParser } from 'ua-parser-js';
+
+let isVRDevice = false
+const { headers } = Astro.request
+const ua = headers.get("user-agent")
+
+if (ua) {
+    const vrDevices = ["Oculus", "Quest", "Pico", "Vive", "Valve", "HoloLens"]
+    const parsedUA = UAParser(ua)
+    isVRDevice = vrDevices.some(vr => parsedUA.device.model?.includes(vr) || parsedUA.os.name?.includes(vr) || parsedUA.browser.name?.includes(vr) );
+}
+
+---
+
+<Fragment>
+    {!isVRDevice &&
+        <div id="vr-banner" class="fixed bottom-0 left-0 right-0 z-20 px-10 pb-10 flex justify-center">
+            <div role="alert" class="alert alert-warning shadow-lg" style="max-width: 1440px;">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div style="width:750px;">
+                    <h3 class="font-bold">VR Headset Required for This Experience</h3>
+                    <div class="text-xs">
+                        This experience is exclusively designed for virtual reality experiences and requires a VR headset to function properly. Unfortunately, accessing this site from a non-VR device is not supported, and you will not be able to proceed without a compatible VR headset.
+                        <br/><br/>
+                        Please switch to a VR headset to access the experience and enjoy the full immersive experience.
+                    </div>
+                </div>
+                <button id="dismiss-banner-cta" class="btn btn-sm">Dismiss</button>
+            </div>
+        </div>
+    }
+</Fragment>
+
+<script>
+    const cta = document.getElementById("dismiss-banner-cta") as HTMLElement
+    cta.addEventListener("click", function() {
+        const banner = document.getElementById("vr-banner");
+        if (banner) {
+            banner.style.display = "none";
+        }
+    });
+</script>

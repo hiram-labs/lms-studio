@@ -2,13 +2,14 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import ErrorCapture from "../../../components/ErrorCapture.astro";
 
+import ContentStartButton from "../../../components/ContentStartButton.astro";
+import UserAgentBanner from "../../../components/UserAgentBanner.astro";
 import C from "../../../libs/config"
 import { directusClientNoAuth } from "../../../libs/directus";
 import { getQueryParam } from "../../../libs/utils"
 
 import { readItems, withToken } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
-import ContentStartButton from "../../../components/ContentStartButton.astro";
 
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
 if(!TOKEN) return Astro.redirect("/login/pin")
@@ -69,3 +70,4 @@ try {
         </ErrorCapture>
     </div>
 </BaseLayout>
+<UserAgentBanner />
