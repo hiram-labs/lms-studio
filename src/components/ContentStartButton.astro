@@ -11,6 +11,10 @@ const {contentLink, deepLink} = Astro.props
     import {DIRECTUS_FILE_ASSET_URL_PREFIX, COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../libs/config"
     import { getCookie } from "../libs/utils";
 
+    declare const Android: {
+        onModuleStartTrigger: (moduleStartUri: string) => void;
+    };
+
     const ctas = document.querySelectorAll('[data-content-start-cta]');
 
     ctas.forEach((cta) => {
