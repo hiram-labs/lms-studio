@@ -8,7 +8,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import C from "../../../libs/config"
 import { directusClientNoAuth } from "../../../libs/directus";
 
-import { readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
 import CopyrightFooter from "../../../components/CopyrightFooter.astro";
 
@@ -18,10 +18,12 @@ if(!ORG_ID || !TOKEN) return Astro.redirect("/login/pin")
 
 let errors: any = []
 let userResponse: any = {}
+let orgResponse: any = {}
 let contentResponse: any = []
 
 try{
     userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
+    orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG_ID)))
     contentResponse = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_organization_content_assignment", {
         filter: {organization_id: ORG_ID},
         sort: ["content_id.content_title"],
@@ -39,18 +41,23 @@ try{
     <div class="p-10">
         <ErrorCapture errors={errors}>
             <div class="flex justify-between w-full">
-                <div class="prose">
-                    <h1 id="browse-all-content-heading" class="mb-10 reveal">
-                        <a aria-hidden="true" tabindex="-1" href="#browse-all-content-heading" class="no-underline">
-                            <span class="mr-1 opacity-20 hover:opacity-60 text-base font-bold inline-block align-middle relative -mt-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-                                    <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
-                                    <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
-                                </svg>
+                <div class="mb-12">
+                    <a aria-hidden="true" tabindex="-1" href="#browse-all-content-heading" class="no-underline">
+                        <span class="inline-block">
+                            <span class="prose block">
+                                <h1 id="browse-all-content-heading">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="inline size-5 opacity-20 hover:opacity-60">
+                                        <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
+                                        <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
+                                    </svg>
+                                    <span class="italic">Welcome back, <span style="color:#c2d500;">{userResponse.first_name} {userResponse.last_name}!</span></span>
+                                </h1>
                             </span>
-                        </a>
-                        <span class="italic">Welcome back, <span style="color:#c2d500;">{userResponse.first_name} {userResponse.last_name}!</span></span>
-                    </h1>
+                            <span class="block">
+                                <span class="ml-7">Session sponsored by <span class="font-extrabold italic">{orgResponse.organization_name}</span>.</span>
+                            </span>
+                        </span>
+                    </a>
                 </div>
                 <div>
                     <div class="tooltip tooltip-bottom" data-tip="logout">

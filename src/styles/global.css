@@ -6,19 +6,3 @@
 html {
   scroll-behavior: smooth;
 }
-
-@keyframes reveal {
-  0% {
-    width: 0%;
-  }
-  100% {
-    width: 100%;
-  }
-}
-
-.reveal {
-  display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  animation: reveal 0.5s linear forwards;
-}
