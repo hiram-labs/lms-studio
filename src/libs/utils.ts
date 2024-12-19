@@ -1,5 +1,12 @@
 import type { ReadableStream as ReadableStreamType } from "@yume-chan/stream-extra/esm/types";
 
+export function truncateText(text: string, maxChars: number): string {
+  if (text.length > maxChars) {
+    return text.substring(0, maxChars) + "...";
+  }
+  return text;
+}
+
 export function getRandomSample<T>(arr: T[], numItems: number) {
   // Shuffle the array using Fisher-Yates algorithm
   for (let i = arr.length - 1; i > 0; i--) {

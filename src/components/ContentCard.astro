@@ -1,6 +1,8 @@
 ---
 import C from "../libs/config"
 
+import { truncateText } from "../libs/utils"
+
 const {imageURL, title, description} = Astro.props
 
 ---
@@ -11,7 +13,7 @@ const {imageURL, title, description} = Astro.props
     </figure>
     <div class="card-body">
         <h2 class="card-title">{title}</h2>
-        <p>{description}</p>
+        <p>{truncateText(description,245)}</p>
         <div class="card-actions justify-end">
             <slot/>
         </div>
