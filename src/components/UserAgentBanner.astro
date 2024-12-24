@@ -49,10 +49,12 @@ if (ua) {
 
 <script>
     const cta = document.getElementById("dismiss-banner-cta") as HTMLElement
-    cta.addEventListener("click", function() {
-        const banner = document.getElementById("vr-banner");
-        if (banner) {
-            banner.style.display = "none";
-        }
-    });
+    if(cta){
+        cta.addEventListener("click", function() {
+            const banner = document.getElementById("vr-banner");
+            if (banner) {
+                banner.style.display = "none";
+            }
+        });
+    }
 </script>
