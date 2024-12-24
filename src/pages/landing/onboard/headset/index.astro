@@ -22,6 +22,7 @@ let appAttrResponse: any = {}
 
 let PIPE_APP_APK_URL = ""
 let PIPE_APP_PKG_NAME = ""
+let PIPE_APP_PKG_VERSION_CODE = ""
 
 try{
     appAttrResponse = await directusClientAuth.request(readItems("lms_application_attribute_assignment", {
@@ -30,8 +31,10 @@ try{
     }))
     PIPE_APP_APK_URL = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_file").map((item:any)=>item["attribute_file"])[0]
     PIPE_APP_PKG_NAME = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_package_name").map((item:any)=>item["attribute_text"])[0]
+    PIPE_APP_PKG_VERSION_CODE = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_package_version_code").map((item:any)=>item["attribute_text"])[0]
     if(!PIPE_APP_APK_URL) throw new Error("Could not retrieve a value for pipe_application attribute apk_file");
     if(!PIPE_APP_PKG_NAME) throw new Error("Could not retrieve a value for pipe_application attribute apk_package_name");
+    if(!PIPE_APP_PKG_VERSION_CODE) throw new Error("Could not retrieve a value for pipe_application attribute apk_package_version_code");
     PIPE_APP_APK_URL = `${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${PIPE_APP_APK_URL}?download=`
 } catch (error) {
     errors = (error as any)?.errors || [{ message: (error as any).message || error }];
@@ -42,7 +45,7 @@ try{
 
 
 <BaseLayout title="onboard headset">
-    <div class="min-h-screen flex flex-col items-center justify-center p-4" data-pipe-app-attr data-pipe-app-apk-url={PIPE_APP_APK_URL} data-pipe-app-pkg-name={PIPE_APP_PKG_NAME}>
+    <div class="min-h-screen flex flex-col items-center justify-center p-4" data-pipe-app-attr data-pipe-app-apk-url={PIPE_APP_APK_URL} data-pipe-app-pkg-name={PIPE_APP_PKG_NAME} data-pipe-app-pkg-version-code={PIPE_APP_PKG_VERSION_CODE}>
 
         <div class="text-center">
             <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
@@ -91,6 +94,7 @@ try{
     const elem = document.querySelector('[data-pipe-app-attr]') as HTMLElement;
     const PIPE_APP_APK_URL = elem.dataset.pipeAppApkUrl!;
     const PIPE_APP_PKG_NAME = elem.dataset.pipeAppPkgName!;
+    const PIPE_APP_PKG_VERSION_CODE = elem.dataset.pipeAppPkgVersionCode!;
 
     const progressStruct: {
         stepElements: NodeListOf<HTMLElement>
@@ -282,14 +286,16 @@ try{
 
                 adb = new Adb(transport);
                 const pm = new PackageManager(adb);
-                
-                const packages = pm.listPackages()
+
+                const packages = pm.listPackages({showVersionCode: true})
                 for await (const pkg of packages){
-                    if(pkg.packageName === PIPE_APP_PKG_NAME){
-                        // TODO: updates can happen here
+                    if(pkg.packageName === PIPE_APP_PKG_NAME && pkg.versionCode === parseInt(PIPE_APP_PKG_VERSION_CODE)){
                         await progressNotification("COMPLETE")
                         return
+                    } else if(pkg.packageName === PIPE_APP_PKG_NAME && pkg.versionCode||Infinity < parseInt(PIPE_APP_PKG_VERSION_CODE)) {
+                        pm.uninstall(pkg.packageName)
                     }
+                    
                 }
 
                 const {fileSize, file} = await progressNotification("SUCCESS", DOWNLOAD_APK, async (stepElement) => await fetchApkFileWithProgress(
@@ -302,7 +308,7 @@ try{
                     }
                 ))
 
-                await progressNotification("SUCCESS", INSTALL_APK, async () => await pm.installStream(fileSize, file))
+                await progressNotification("SUCCESS", INSTALL_APK, async () => await pm.installStream(fileSize, file ))
                 await progressNotification("SUCCESS", CLOSE_CONNECTION, async () => await delay(2500))
                 await progressNotification("COMPLETE")
             } catch (error) {
@@ -337,6 +343,11 @@ try{
                 } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("failed to fetch")) {
                     // error reaching the server hosting apk file [maybe CORS/TIMEOUT/SSL]
                     await progressNotification("ERROR", DOWNLOAD_APK, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("install_failed_already_exists")) {
+                    // error attempt to reinstall existing pkg without first uninstall
+                    await progressNotification("ERROR", INSTALL_APK, async (stepElement) => {
                         progressStruct.stepCardErrorAlertHandler(stepElement, error)
                     })
                 } else {
