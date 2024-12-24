@@ -289,11 +289,11 @@ try{
 
                 const packages = pm.listPackages({showVersionCode: true})
                 for await (const pkg of packages){
-                    if(pkg.packageName === PIPE_APP_PKG_NAME && pkg.versionCode === parseInt(PIPE_APP_PKG_VERSION_CODE)){
+                    if(pkg.packageName === PIPE_APP_PKG_NAME && (pkg.versionCode||Infinity) < parseInt(PIPE_APP_PKG_VERSION_CODE)) {
+                        pm.uninstall(pkg.packageName)
+                    } else if(pkg.packageName === PIPE_APP_PKG_NAME) {
                         await progressNotification("COMPLETE")
                         return
-                    } else if(pkg.packageName === PIPE_APP_PKG_NAME && pkg.versionCode||Infinity < parseInt(PIPE_APP_PKG_VERSION_CODE)) {
-                        pm.uninstall(pkg.packageName)
                     }
                     
                 }
