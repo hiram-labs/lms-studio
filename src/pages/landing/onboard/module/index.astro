@@ -1,0 +1,163 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import CopyrightFooter from "../../../../components/CopyrightFooter.astro";
+import OnboardModuleDownload from "../../../../components/OnboardModuleDownload.astro";
+import OnboardModuleInstall from "../../../../components/OnboardModuleInstall.astro";
+
+import UserAgentBanner from "../../../../components/UserAgentBanner.astro";
+import { logger } from "@it-astro:logger";
+import OnboardModuleLaunch from "../../../../components/OnboardModuleLaunch.astro";
+
+let errors: any = []
+
+---
+
+<BaseLayout title="onboard module">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <div class="text-center">
+            <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
+            <div class="text-2xl font-semibold uppercase tracking-wider my-4">training with impact</div>
+            <div class="text-xl font-bold my-5">Module Download & Installation</div>
+        </div>
+
+        <div class="card w-full max-w-5xl min-h-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <ErrorCapture errors={errors}>
+                  <div class="hidden" data-unhandled-exception-alert-wrapper>
+                    <div role="alert" class="alert alert-error">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6 shrink-0 stroke-current"
+                        fill="none"
+                        viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h3 class="font-bold">Unhandled Exception!</h3>
+                        <span>
+                          Something unexpected occurred during the process of downloading and installing the necessary module on your VR headset. This may have interrupted the setup, preventing the module from being properly installed. Rest assured that a full report of this error has been automatically logged for review. 
+                          <br><br>
+                          Please contact our support team with this information so that we can assist you in resolving the issue and ensure the module is correctly installed. We understand the importance of a smooth experience, and we work diligently to address any issues. Thank you for your patience and understanding.
+                        </span>
+                      </div>
+                      <button class="btn btn-sm" data-unhandled-exception-alert-cta>Restart</button>
+                    </div>
+                  </div>
+                    <ul class="timeline timeline-vertical">
+                        <li class="">
+                          <div class="timeline-start timeline-box">
+                            <OnboardModuleDownload />
+                          </div>
+                          <div class="timeline-middle">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              class="h-5 w-5">
+                              <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd" />
+                            </svg>
+                          </div>
+                          <hr class=""/>
+                        </li>
+                        <li class="hidden">
+                          <hr class="" />
+                          <div class="timeline-middle">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              class="h-5 w-5">
+                              <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd" />
+                            </svg>
+                          </div>
+                          <div class="timeline-end timeline-box">
+                            <OnboardModuleInstall />
+                          </div>
+                          <hr class="" />
+                        </li>
+                        <li class="hidden">
+                          <hr class="" />
+                          <div class="timeline-start timeline-box">
+                            <OnboardModuleLaunch />
+                          </div>
+                          <div class="timeline-middle">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              class="h-5 w-5">
+                              <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                clip-rule="evenodd" />
+                            </svg>
+                          </div>
+                        </li>
+                    </ul>
+                </ErrorCapture>
+            </div>
+        </div>
+        <CopyrightFooter />
+    </div>
+</BaseLayout>
+<UserAgentBanner />
+
+<script>
+    const [moduleDownload, moduleInstall, moduleStart] = document.querySelectorAll('ul.timeline.timeline-vertical li');
+    const unhandledExceptionCta = document.querySelector("[data-unhandled-exception-alert-cta]")
+    const unhandledExceptionWrapper = document.querySelector("[data-unhandled-exception-alert-wrapper]")
+
+    if(unhandledExceptionCta){
+      unhandledExceptionCta.addEventListener("click", async (e: Event) => {
+        Android.onRestartAppTrigger()
+      })
+    }
+
+    function addColorsToTimelineItem(liElement:Element, color="success") {
+        const hrElements = liElement.querySelectorAll('hr');
+        hrElements.forEach(hr => {
+            hr.classList.add(`bg-${color}`);
+        });
+
+        const timelineMiddle = liElement.querySelector('.timeline-middle');
+        const svgElement = timelineMiddle ? timelineMiddle.querySelector('svg') : null;
+
+        if (svgElement) {
+            svgElement.classList.add(`text-${color}`);
+        }
+    }
+
+    Android.onModuleDownloadSuccess = () => {
+        Android.onModuleDownloadComplete()
+        addColorsToTimelineItem(moduleDownload)
+        moduleInstall.classList.remove("hidden")
+    }
+
+    Android.onModuleInstallSuccess = () => {
+        Android.onModuleInstallComplete()
+        addColorsToTimelineItem(moduleInstall)
+        moduleStart.classList.remove("hidden")
+    }
+
+    Android.onUnhandledException = (e: string) => {
+      moduleDownload.classList.add("hidden")
+      moduleInstall.classList.add("hidden")
+      moduleStart.classList.add("hidden")
+
+      if(unhandledExceptionWrapper){
+        unhandledExceptionWrapper.classList.remove("hidden")
+      }
+    }
+</script>

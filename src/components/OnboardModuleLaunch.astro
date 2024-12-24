@@ -1,0 +1,49 @@
+---
+
+---
+
+<div>
+    <div class="prose">
+        <h3>Launch Required</h3>
+        <p>The module is now ready to be launched. Click the button below to open the application. If the application does not launch, close and reopen this app. If the issue persists, contact your administrator for assistance.</p>
+    </div>
+    <div class="hidden" data-module-launch-error-wrapper>
+        <div role="alert" class="alert alert-error" data-module-launch-error>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24">
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Unable to launch the module. Please try again by closing and reopening the app.</span>
+        </div>
+    </div>
+    <div class="mt-4">
+        <a href="#" class="btn btn-sm btn-neutral" data-module-launch-start-cta>
+            Start Module
+        </a>
+    </div>
+</div>
+
+<script>
+    const launchErrorAlertWrapper = document.querySelector("[data-module-launch-error-wrapper]") as HTMLAnchorElement
+     const launchStartCta = document.querySelector("[data-module-launch-start-cta]") as HTMLAnchorElement
+
+    if(launchStartCta){
+        launchStartCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            Android.onModuleLaunchStartTrigger()
+        })
+    }
+
+    Android.onModuleLaunchFail = () => {
+        launchErrorAlertWrapper.classList.remove("hidden")
+        launchStartCta.classList.add("hidden")
+    }
+
+</script>

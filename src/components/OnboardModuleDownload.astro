@@ -1,0 +1,125 @@
+---
+
+---
+
+<div >
+    <div class="prose">
+        <h3>Download Required</h3>
+        <p>This module is being accessed on this VR headset for the first time or requires an update. To ensure full functionality, it needs to be downloaded and installed. Use the button below to initiate the download process. Once the download is complete, follow any on-screen prompts to finalize the installation.</p>
+    </div>
+    <div data-module-download-active>
+        <div class="flex flex-row pt-4 pb-6 hidden" data-module-download-progress-details-wrapper>
+            <div class="w-full">
+                <strong>Download Details:</strong><br>
+                Module Name: <span class="italic text-sm font-semibold" data-module-download-start-details-text-content-items data-module-download-start-module-name>unknown</span><br>
+                File Size: <span class="italic text-sm font-semibold" data-module-download-start-details-text-content-items data-module-download-start-file-start>unknown</span><br>
+            </div>
+            <div class="flex self-center justify-center">
+                <div class="radial-progress text-success" style="--size:3rem;--value:0;" role="progressbar">0%</div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="btn btn-sm btn-neutral" data-module-download-start-cta>
+                Start Download
+            </a>
+        </div>
+        <div class="hidden" data-module-download-error-alert-cta-wrapper>
+            <div>
+                <div role="alert" class="alert alert-error" data-module-download-error>
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>"Error: Unable to start or complete the download. Please check your internet connection and try again. If the issue persists, contact your administrator for assistance."</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="#" class="btn btn-sm btn-neutral" data-module-download-restart-app-cta>
+                    Restart App
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="my-4 hidden" data-module-download-complete>
+        <div role="alert" class="alert alert-success">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 shrink-0 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Download Complete!</span>
+          </div>
+    </div>
+</div>
+
+<script>
+    const downloadErrorAlertCtaWrapper = document.querySelector("[data-module-download-error-alert-cta-wrapper]") as HTMLElement;
+    const downloadProgressDetailsWrapper = document.querySelector("[data-module-download-progress-details-wrapper]") as HTMLElement;
+    const downloadStartCta = document.querySelector("[data-module-download-start-cta]") as HTMLAnchorElement
+    const downloadRestartAppCta = document.querySelector("[data-module-download-restart-app-cta]") as HTMLAnchorElement
+
+    if(downloadStartCta){
+        downloadStartCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            downloadStartCta.classList.add("hidden")
+            downloadProgressDetailsWrapper.classList.remove("hidden")
+            Android.onModuleDownloadStartTrigger()
+        })
+    }
+
+    if(downloadRestartAppCta){
+        downloadRestartAppCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            Android.onRestartAppTrigger()
+        })
+    }
+
+    Android.onSetModuleDownloadDetails = (moduleName: string, fileSize: string): void => {
+        document.querySelectorAll('[data-module-download-start-details-text-content-items]').forEach((span) => {
+            if (span.hasAttribute('data-module-download-start-module-name')) {
+                span.textContent = moduleName;
+            } else if (span.hasAttribute('data-module-download-start-file-start')) {
+                span.textContent = fileSize;
+            }
+        });
+    };
+
+
+    Android.onModuleDownloadProgress = (progressValue:number) => {
+        const clampedValue = Math.max(0, Math.min(100, progressValue));
+        const radialProgress = downloadProgressDetailsWrapper.querySelector('.radial-progress') as HTMLElement;
+
+        if (radialProgress) {
+            radialProgress.style.setProperty('--value', clampedValue.toString());
+            radialProgress.textContent = `${clampedValue}%`;
+        } else {
+            console.error("Radial progress element not found.");
+        }
+    }
+
+    Android.onModuleDownloadComplete = () => {
+        const active = document.querySelector("[data-module-download-active]") as HTMLElement;
+        const complete = document.querySelector("[data-module-download-complete]") as HTMLElement;
+        active.classList.add("hidden")
+        complete.classList.remove("hidden")
+    }
+
+    Android.onModuleDownloadFail = () => {
+        downloadStartCta.classList.add("hidden")
+        downloadProgressDetailsWrapper.classList.add("hidden")
+        downloadErrorAlertCtaWrapper.classList.remove("hidden")
+    }
+</script>

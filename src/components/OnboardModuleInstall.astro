@@ -1,0 +1,110 @@
+---
+
+---
+
+<div>
+    <div class="prose">
+        <h3>Installation Required</h3>
+        <p>The module has been downloaded and is ready for installation. To complete the setup process, please click the button below. You may need to grant permissions or confirm installation prompts.</p>
+    </div>
+    <div data-module-install-active>
+        <div class="pt-4 pb-6 hidden" data-module-install-progress-details-wrapper>
+            <span class="loading loading-dots loading-lg"></span>
+        </div>
+        <div class="mt-4">
+            <a href="#" class="btn btn-sm btn-neutral" data-module-install-start-cta>
+                Start Installation
+            </a>
+        </div>
+        <div class="hidden" data-module-install-error-alert-cta-wrapper>
+            <div>
+                <div role="alert" class="alert alert-error" data-module-install-error>
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Unable to complete the installation. Ensure necessary permissions are granted and try again.</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="#" class="btn btn-sm btn-neutral" data-module-install-retry-install-cta>
+                    Retry Installation
+                </a>
+            </div>
+            <div class="mt-4">
+                <a href="#" class="btn btn-sm btn-neutral" data-module-install-restart-app-cta>
+                    Restart App
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="my-4 hidden" data-module-install-complete>
+        <div role="alert" class="alert alert-success">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 shrink-0 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Installation Complete!</span>
+          </div>
+    </div>
+</div>
+
+
+<script>
+    const installErrorAlertCtaWrapper = document.querySelector("[data-module-install-error-alert-cta-wrapper]") as HTMLElement;
+    const installProgressDetailsWrapper = document.querySelector("[data-module-install-progress-details-wrapper]") as HTMLElement;
+    const installStartCta = document.querySelector("[data-module-install-start-cta]") as HTMLAnchorElement
+    const installRetryCta = document.querySelector("[data-module-install-retry-install-cta]") as HTMLAnchorElement
+    const installRestartAppCta = document.querySelector("[data-module-install-restart-app-cta]") as HTMLAnchorElement
+
+    if(installStartCta){
+        installStartCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            installStartCta.classList.add("hidden")
+            installProgressDetailsWrapper?.classList.remove("hidden")
+            Android.onModuleInstallStartTrigger()
+        })
+    }
+
+    if(installRestartAppCta){
+        installRestartAppCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            Android.onRestartAppTrigger()
+        })
+    }
+
+    if(installRetryCta){
+        installRetryCta.addEventListener("click", async (e: Event) => {
+            e.preventDefault();
+            Android.onModuleInstallRetryTrigger()
+        })
+    }
+
+    Android.onModuleInstallComplete = () => {
+        const active = document.querySelector("[data-module-install-active]") as HTMLElement;
+        const complete = document.querySelector("[data-module-install-complete]") as HTMLElement;
+        active.classList.add("hidden")
+        complete.classList.remove("hidden")
+    }
+
+    Android.onModuleInstallFail = () => {
+        installStartCta.classList.add("hidden")
+        installProgressDetailsWrapper.classList.add("hidden")
+        installErrorAlertCtaWrapper.classList.remove("hidden")
+    }
+
+</script>
