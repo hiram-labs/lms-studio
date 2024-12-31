@@ -30,6 +30,7 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.7.4",
+    "@types/tabulator-tables": "^6.2.3",
     "daisyui": "^4.12.10"
   }
 }
