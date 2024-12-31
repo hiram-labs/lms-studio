@@ -1,10 +1,10 @@
 ---
-import CopyrightFooter from "../../components/CopyrightFooter.astro";
-import ErrorCapture from "../../components/ErrorCapture.astro";
-import BaseLayout from "../../layouts/BaseLayout.astro";
+import CopyrightFooter from "../../../components/CopyrightFooter.astro";
+import ErrorCapture from "../../../components/ErrorCapture.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
 
-import C from "../../libs/config"
-import { directusClientAuth } from "../../libs/directus";
+import C from "../../../libs/config"
+import { directusClientAuth } from "../../../libs/directus";
 
 import { readItems } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
@@ -84,7 +84,7 @@ if (Astro.request.method === "POST") {
 </BaseLayout>
 
 <script>
-  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../../libs/config"
+  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../../../libs/config"
 
   document.cookie = `${COOKIE_KEY_USER_ORG_ID}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;

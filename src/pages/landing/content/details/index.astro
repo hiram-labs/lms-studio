@@ -1,12 +1,12 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import ErrorCapture from "../../../components/ErrorCapture.astro";
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
 
-import ContentStartButton from "../../../components/ContentStartButton.astro";
-import UserAgentBanner from "../../../components/UserAgentBanner.astro";
-import C from "../../../libs/config"
-import { directusClientNoAuth } from "../../../libs/directus";
-import { getQueryParam } from "../../../libs/utils"
+import ContentStartButton from "../../../../components/ContentStartButton.astro";
+import UserAgentBanner from "../../../../components/UserAgentBanner.astro";
+import C from "../../../../libs/config"
+import { directusClientNoAuth } from "../../../../libs/directus";
+import { getQueryParam } from "../../../../libs/utils"
 
 import { readItems, withToken } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
