@@ -9,7 +9,7 @@ const {contentLink, deepLink} = Astro.props
 
 <script>
     import {DIRECTUS_FILE_ASSET_URL_PREFIX, COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../libs/config"
-    import { getCookie } from "../libs/utils";
+    import { getCookieFromDocument } from "../libs/utils";
 
     const ctas = document.querySelectorAll('[data-content-start-cta]');
 
@@ -26,8 +26,8 @@ const {contentLink, deepLink} = Astro.props
             iframe.style.display = 'none';
             targetElement.after(iframe);
 
-            const org = getCookie(COOKIE_KEY_USER_ORG_ID)
-            const token = getCookie(COOKIE_KEY_USER_STATIC_TOKEN)
+            const org = getCookieFromDocument(COOKIE_KEY_USER_ORG_ID)
+            const token = getCookieFromDocument(COOKIE_KEY_USER_STATIC_TOKEN)
 
             const userURL = `${domain}/api/module-access/${org}/${token}`
             const moduleURL =`${DIRECTUS_FILE_ASSET_URL_PREFIX}${contentLink}?download=`
