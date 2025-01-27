@@ -46,6 +46,11 @@ if (Astro.request.method === "POST") {
     errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
   }
+} else {
+    const pastDate = new Date("Thu, 01 Jan 1970 00:00:00 UTC")
+    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, "", {path: "/", expires: pastDate})
+    Astro.cookies.set(C.COOKIE_KEY_USER_ROLE_NAME, "", {path: "/", expires: pastDate})
+    Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, "", {path: "/", expires: pastDate})
 }
 
 ---
@@ -94,11 +99,3 @@ if (Astro.request.method === "POST") {
         </div>
     </form>
 </LoginLayout>
-
-<script>
-  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_ROLE_NAME, COOKIE_KEY_USER_STATIC_TOKEN} from "../../../libs/config"
-
-  document.cookie = `${COOKIE_KEY_USER_ORG_ID}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-  document.cookie = `${COOKIE_KEY_USER_ROLE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-  document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-</script>
