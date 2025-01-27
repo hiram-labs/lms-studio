@@ -1,0 +1,83 @@
+---
+import ErrorCapture from "../components/ErrorCapture.astro";
+
+import C from "../libs/config"
+import { directusClientNoAuth } from "../libs/directus";
+
+import {readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const orgId = data.get("org") || ""
+    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+}
+
+let errors: any = []
+let orgResponses: any = []
+
+
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+const ROLE = Astro.cookies.get(C.COOKIE_KEY_USER_ROLE_NAME)?.value
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+
+try {
+    if(!TOKEN || !ORG || !ROLE) throw new Error("Missing required cookie: TOKEN or ORG or ROLE");
+
+    if(C.ACCESS_ALL_ORGS_ROLES.includes(ROLE)) {
+        orgResponses = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_organization", {fields: ["id", "organization_name"]})))
+    } else {
+        const userId = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe( {fields: ["id"]} )))
+        orgResponses = await directusClientNoAuth.request(withToken(TOKEN, readItems("lms_actor_access", {
+            filter: {user_id: userId},
+            fields: ["organization_id.id", "organization_id.organization_name"]
+        })))
+        orgResponses = orgResponses.map((resp:any)=>resp.organization_id)
+    }
+
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<div>
+    <ErrorCapture errors={errors}>
+        <form
+            id="dashboard-org-selection-form"
+            class="form-control w-full max-w-xs"
+            action={Astro.url.pathname}
+            method="POST"
+        >
+            <div class="label">
+                <span class="label-text"></span>
+                <span class="label-text-alt">Choose an organization to manage.</span>
+            </div>
+            <select class="select select-bordered select-sm border-neutral border-2 font-semibold" name="org">
+                {orgResponses.map((org:any)=>
+                    org.id === ORG ? 
+                        <option disabled selected>{org.organization_name}</option> :
+                        <option value={org.id}>{org.organization_name}</option>
+                )}
+            </select>
+            <div class="label">
+                <span class="label-text-alt"></span>
+                <span class="label-text-alt"></span>
+            </div>
+        </form>
+    </ErrorCapture>
+</div>
+
+<script>
+    const form = document.getElementById("dashboard-org-selection-form") as HTMLFormElement;
+
+    if (form) {
+        const selectElement = form.getElementsByTagName("select")[0];
+        if (selectElement) {
+            selectElement.addEventListener("change", () => {
+                form.submit();
+            });
+        }
+    }
+</script>

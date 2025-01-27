@@ -1,0 +1,45 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import TableTraineeOverview from "../../../../components/TableTraineeOverview.astro";
+
+import C from "../../../../libs/config"
+import { directusClientNoAuth } from "../../../../libs/directus";
+
+import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
+
+let errors: any = []
+let userResponse: any = {}
+let orgResponse: any = {}
+
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+if(!ORG || !TOKEN) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    // userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
+    // orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG)))
+
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="trainee overview dashboard">
+    <ErrorCapture errors={errors}>
+        <div class="prose">
+            <h2>Manage trainee status and access to platform</h2>
+            <p class="text-sm">
+                Use this dashboard to view and update the current status of trainees, control their platform access, and monitor their progress.
+            </p>
+        </div>
+        <div class="py-7">
+            <div class="border-2">
+                <TableTraineeOverview />
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>

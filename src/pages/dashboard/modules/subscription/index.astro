@@ -1,0 +1,44 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import TableModuleSubscription from "../../../../components/TableModuleSubscription.astro";
+import C from "../../../../libs/config"
+import { directusClientNoAuth } from "../../../../libs/directus";
+
+import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
+
+let errors: any = []
+let userResponse: any = {}
+let orgResponse: any = {}
+
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+if(!ORG || !TOKEN) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    // userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
+    // orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG)))
+
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="organisation subscriptions dashboard">
+    <ErrorCapture errors={errors}>
+        <div class="prose">
+            <h2>Manage organisation's subscriptions to modules</h2>
+            <p class="text-sm">
+                View, modify, and manage the modules an organisation is subscribed to.
+            </p>
+        </div>
+        <div class="py-7">
+            <div class="border-2">
+                <TableModuleSubscription />
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>

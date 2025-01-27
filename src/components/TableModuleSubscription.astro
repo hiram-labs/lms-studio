@@ -1,0 +1,40 @@
+---
+
+---
+
+<div id="dashboard-module-subscription-table" />
+
+<script>
+    import {TabulatorFull as Tabulator, type CellComponent} from "tabulator-tables";
+    import {showAlert} from "../libs/utils"
+
+    let table: Tabulator;
+
+    const tableId = "#dashboard-module-subscription-table"
+    table = new Tabulator(tableId, {
+        layout: "fitColumns",
+        layoutColumnsOnNewData:true,
+        responsiveLayout:true,
+        maxHeight: 650,
+        pagination: true,
+        paginationSize: 10,
+        paginationSizeSelector: true,
+        paginationCounter: "rows",
+        paginationMode: "remote",
+        sortMode:"remote",
+        filterMode: "remote",
+        index: "id",
+        ajaxLoader: true,
+        ajaxConfig: "POST",
+        ajaxContentType: "json",
+        ajaxFiltering: true,
+        ajaxSorting: true,
+        ajaxParams: { id: tableId},
+        ajaxURL: "/api/table-data/",
+        columns: [
+            {title:"Name", field:"content_title", width:"30%"},
+            {title:"Description", field:"content_description"},
+        ],
+    });
+
+</script>

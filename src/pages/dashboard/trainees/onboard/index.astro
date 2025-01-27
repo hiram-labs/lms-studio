@@ -1,0 +1,182 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import TableTraineeManage from "../../../../components/TableTraineeManage.astro";
+
+import C from "../../../../libs/config"
+import { directusClientNoAuth } from "../../../../libs/directus";
+
+import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from "@it-astro:logger";
+
+let errors: any = []
+let userResponse: any = {}
+let orgResponse: any = {}
+
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+if(!ORG || !TOKEN) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    // userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe()))
+    // orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG)))
+
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="trainee management dashboard">
+    <ErrorCapture errors={errors}>
+        <div class="mb-36">
+            <div class="prose">
+                <h2>Add new trainees to the platform</h2>
+                <p class="text-sm">
+                    Easily add trainees by manually entering details or uploading files in supported formats. Manage entries effectively using the table below.
+                </p>
+            </div>
+            <div class="py-7">
+                <div class="flex flex-col lg:flex-row items-center justify-center w-full gap-4">
+                    <label for="dashboard-trainees-manage-manual-addition-input" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 ">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <p class="mb-2 text-sm"><span class="font-semibold">Click to manually add entry</span></p>
+                        </div>
+                        <input id="dashboard-trainees-manage-manual-addition-input" type="button" class="hidden" />
+                    </label>
+
+                    <label for="dashboard-trainees-manage-upload-drop-zone-input" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 ">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+                            </svg>
+                            <p class="mb-2 text-sm"><span class="font-semibold">Click to upload from a file</span></p>
+                            <p class="text-xs">CSV, XLSX or ODS</p>
+                        </div>
+                        <input id="dashboard-trainees-manage-upload-drop-zone-input" type="file" class="hidden" accept=".csv,.xlsx,.ods" />
+                    </label>
+                </div> 
+            </div>
+            <div class="py-7">
+                <div class="border-2">
+                    <div id="dashboard-trainee-manage-table" />
+                </div>
+                <button id="dashboard-trainee-manage-table-cta" class="btn btn-neutral btn-block rounded-none btn-sm">Save</button>
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>
+
+<script>
+    import * as XLSX from 'xlsx';
+    import {TabulatorFull as Tabulator, type CellComponent} from "tabulator-tables";
+    import { showAlert } from "../../../../libs/utils";
+
+    let table: Tabulator;
+
+    const handleDeleteRow  = async (e: UIEvent, cell: CellComponent) => {
+        const row = cell.getRow()
+        row.delete()
+    }
+
+    const handleSaveData = async (data: TMiscUtilReqPayloadData["add-trainees"]) => {
+        try {
+            const response = await fetch("/api/misc-util", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", },
+                body: JSON.stringify({ function: "add-trainees", data } as TMiscUtilReqPayload<"add-trainees">),
+            });
+
+            const payload = await response.json();
+            if (response.ok) {
+                showAlert("success", `Successfully added ${data.length} trainees.`);
+                // TODO: use modal to show feedback
+                table.clearData()
+            } else {
+                let error = "Unknown"
+                if (payload.errors) {
+                    const errors = payload.errors.map((err:any)=>err.message)
+                    error = errors.join("<br/>")
+                }
+                showAlert("error", `Failed to save data: <br/>${error}`);
+            }
+        } catch (error) {
+            showAlert("error", "An unexpected error occurred while saving data.");
+        }
+    };
+
+    const findInvalidRows = (data: any[]) => {
+        return data.reduce<number[]>((indices, obj, index) => {
+            if (Object.values(obj).some(value => !value || value === "--")) {
+                indices.push(index);
+            }
+            return indices;
+        }, []);
+    }
+
+    const tableId = "#dashboard-trainee-manage-table"
+    table = new Tabulator(tableId, {
+        dependencies: { XLSX: XLSX, },
+        layout: "fitColumns",
+        layoutColumnsOnNewData:true,
+        responsiveLayout:true,
+        maxHeight: 650,
+        pagination: true,
+        paginationSize: 10,
+        paginationSizeSelector: true,
+        paginationCounter: "rows",
+        paginationMode: "local",
+        columns: [
+            {title:"First Name", field:"first_name", editor:"input", validator:["required"]},
+            {title:"Last Name", field:"last_name", editor:"input", validator:["required"]},
+            {title:"Email", field:"email", editor:"input", validator:["required"]},
+            {title:"", field:"", width:60, hozAlign:"center", frozen: true, headerSort:false, tooltip:"Delete Row", cellClick:handleDeleteRow, formatter:() => `<span class="inline-block"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clip-rule="evenodd" /></svg></span>`},
+        ],
+    });
+
+    const manualInput = document.getElementById("dashboard-trainees-manage-manual-addition-input");
+    if (manualInput) {
+        manualInput.addEventListener("click", async (event) => {
+            event.preventDefault();
+            try {
+                table.addData([{ first_name: "--", last_name: "--", email: "--" }], true);
+                showAlert("info", "A new row has been added successfully! Please fill in the details and remember to save your changes to ensure they are applied.")
+            } catch {
+                showAlert("error", "An unexpected error occurred while adding a new row. Please try again.");
+            }
+        });
+
+    }
+
+    const uploadInput = document.getElementById("dashboard-trainees-manage-upload-drop-zone-input");
+    if (uploadInput) {
+        uploadInput.addEventListener("click", async (event) => {
+            event.preventDefault()
+            try {
+                await table.import("xlsx", [".xlsx", ".csv", ".ods"], "buffer");
+                showAlert("info", "File imported successfully! Your data has been added to the table. Remember to save your changes to ensure they are applied.");
+            } catch {
+                showAlert("error", "An unexpected error occurred while importing the file. Please try again.");
+            }
+        });
+    }
+
+    const saveCta = document.getElementById("dashboard-trainee-manage-table-cta");
+    if (saveCta) {
+        saveCta.addEventListener("click", async (_event) => {
+            const data = table.getData()
+            if (!data.length) return
+
+            const indices = findInvalidRows(data)
+            if(indices.length) {
+                showAlert("error", "Some rows contain invalid values. Please review and correct them.")
+            } else {
+                handleSaveData(data)
+            }
+        });
+    }
+</script>

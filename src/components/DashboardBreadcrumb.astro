@@ -5,7 +5,7 @@ const breadcrumbs = generateDashboardBreadcrumbs(Astro.url)
 
 ---
 
-<div class="breadcrumbs text-sm mb-5">
+<div class="breadcrumbs text-sm">
     <ul>
         {breadcrumbs.map(item => (
             <li><a href={item.url}>{item.name}</a></li>

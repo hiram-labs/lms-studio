@@ -1,0 +1,52 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import C from "../../../../libs/config"
+import { directusClientNoAuth } from "../../../../libs/directus";
+
+import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
+
+let errors: any = []
+let userResponse: any = {}
+let orgResponse: any = {}
+
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+if(!ORG || !TOKEN) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe({fields: ["first_name","last_name","email","role.name"]})))
+    // orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG)))
+
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="user profile dashboard">
+    <ErrorCapture errors={errors}>
+        <div>
+            <div class="card bg-base-200 w-full max-w-2xl">
+                <div class="card-body items-start">
+                    <div class="flex items-center">
+                        <div>
+                            <div class="flex justify-center items-center h-32 w-32 rounded-full border-2 border-base-300" >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-32">
+                                    <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="px-6">
+                            <h2 class="card-title">{userResponse.first_name} {userResponse.last_name}</h2>
+                            <p>{userResponse.email}</p>
+                            <p class="opacity-40">{userResponse.role.name}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>

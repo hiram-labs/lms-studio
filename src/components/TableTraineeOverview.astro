@@ -1,0 +1,63 @@
+---
+
+---
+
+<div id="dashboard-trainee-overview-table" />
+
+<script>
+    import {TabulatorFull as Tabulator, type CellComponent} from "tabulator-tables";
+    import {showAlert} from "../libs/utils"
+
+    let table: Tabulator;
+
+    const handleResendPinEmail = async (e: UIEvent, cell: CellComponent) => {
+        try {
+            const data = cell.getData()
+            const response = await fetch("/api/misc-util", {
+                method: "POST",
+                headers: {"Content-Type": "application/json",},
+                body: JSON.stringify(({function:"resend-trainee-email", data} as TMiscUtilReqPayload)),
+            });
+
+            if (response.ok) {
+                showAlert("success", `The request to resend the PIN email was successfully completed.<br/><span class="italic font-semibold">&nbsp;&nbsp;${data.email}</span>`);
+            } else {
+                showAlert("error", `The request to resend the PIN email has encountered an issue.<br/><span class="italic font-semibold">&nbsp;&nbsp;${data.email}</span>`);
+            }
+        } catch (error) {
+            showAlert("error", `An error occurred while attempting to resend the PIN email: <br/> ${(error as any)?.message || error}`);
+        }
+    }
+
+    const tableId = "#dashboard-trainee-overview-table"
+    table = new Tabulator(tableId, {
+        layout: "fitColumns",
+        layoutColumnsOnNewData:true,
+        responsiveLayout:true,
+        maxHeight: 650,
+        pagination: true,
+        paginationSize: 10,
+        paginationSizeSelector: true,
+        paginationCounter: "rows",
+        paginationMode: "remote",
+        sortMode:"remote",
+        filterMode: "remote",
+        index: "id",
+        ajaxLoader: true,
+        ajaxConfig: "POST",
+        ajaxContentType: "json",
+        ajaxFiltering: true,
+        ajaxSorting: true,
+        ajaxParams: { id: tableId},
+        ajaxURL: "/api/table-data/",
+        columns: [
+            {title:"First Name", field:"first_name"},
+            {title:"Last Name", field:"last_name"},
+            {title:"Pin", field:"pin", width:120},
+            {title:"Email", field:"email"},
+            {title:"Last Seen", field:"last_access", width:120, formatter:(cell) => cell.getValue() ? new Date(cell.getValue()).toLocaleDateString("en-GB") : ""},
+            {title:"", field:"", width:60, hozAlign:"center", frozen: true, headerSort:false, tooltip:"Resend Pin Email", cellClick:handleResendPinEmail, formatter:() => `<span class="inline-block"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5"><path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" /></svg></span>`},
+        ],
+    });
+
+</script>
