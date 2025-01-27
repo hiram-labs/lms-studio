@@ -1,0 +1,41 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import CopyrightFooter from "../components/CopyrightFooter.astro";
+
+const { title } = Astro.props;
+const { pathname } = Astro.url
+
+---
+
+<BaseLayout title={title} description="" ogImage="">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <div class="text-center">
+            <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
+            <div class="text-2xl font-semibold uppercase tracking-wider my-4">training with impact</div>
+            <div class="text-xl font-bold my-5">Welcome</div>
+        </div>
+  
+        <div class="flex w-full max-w-5xl rounded-xl border bg-base-200 overflow-hidden">
+            <div class="hidden md:block md:w-3/5 bg-cover bg-center" style="background-image: url('/images/headset-user.png'); height: 375px;" />
+  
+            <div class="relative w-full md:w-2/5">
+                <div class="w-full h-full flex items-center justify-center p-16 md:p-6">
+                    <div class="w-full">
+                        <slot />
+                        <div class="text-sm flex justify-between mt-1">
+                            <div>
+                                <a href="/login/pin" class=`${pathname.startsWith("/login/pin") ? "font-semibold underline" : ""} link link-hover`>Trainee Login</a>
+                            </div>
+                            <div>
+                                <a href="/login/pass" class=`${pathname.startsWith("/login/pass") ? "font-semibold underline" : ""} link link-hover`>Admin Login</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+  
+        <CopyrightFooter />
+    </div>
+</BaseLayout>

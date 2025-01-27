@@ -1,12 +1,11 @@
 ---
-import CopyrightFooter from "../../../components/CopyrightFooter.astro";
 import ErrorCapture from "../../../components/ErrorCapture.astro";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
+import LoginLayout from "../../../layouts/LoginLayout.astro";
 
 import C from "../../../libs/config"
-import { directusClientAuth } from "../../../libs/directus";
+import { directusClientAuth, directusClientNoAuth } from "../../../libs/directus";
 
-import { readItems } from "@directus/sdk";
+import { readItems, updateMe, withToken, type DirectusUser } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
 
 let errors: any = {}
@@ -18,20 +17,23 @@ if (Astro.request.method === "POST") {
     const pinResponse = await directusClientAuth.request(readItems("lms_actor_access", {
       filter: {access_pin: String(data.get("pin"))},
       alias: {unmasked_token: "token"},
-      fields: ["user_id.unmasked_token", "organization_id.id"]
+      fields: ["user_id.unmasked_token", "organization_id.id"],
     }))
 
     if(!pinResponse.length) throw new Error("Incorrect PIN.");
 
     const [{
       user_id: {unmasked_token: unmaskedToken},
-      organization_id: {id: orgID}
+      organization_id: {id: orgId}
     }] = pinResponse
 
-    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgID, {path: "/"})
+    await directusClientNoAuth.request<DirectusUser>(withToken(unmaskedToken, updateMe({last_access: new Date().toISOString() as "datetime"})))
+
+    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
     Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmaskedToken, {path: "/"})
-    
-    return Astro.redirect("/landing/content")
+
+    // TODO: you can do role base login here but for now just redirect to landing/content as default
+    return Astro.redirect(Astro.url.searchParams.get('after_auth') || "/landing/content")
   } catch (error) {
     errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
@@ -40,24 +42,14 @@ if (Astro.request.method === "POST") {
 
 ---
 
-<BaseLayout title="pin login">
-  <div class="min-h-screen flex flex-col items-center justify-center p-4">
-
-    <div class="text-center">
-      <img alt="logo" src="/images/logo-black-700w.png" class="h-24 w-auto mx-auto" />
-      <div class="text-2xl font-semibold uppercase tracking-wider my-4">training with impact</div>
-      <div class="text-xl font-bold my-5">Welcome</div>
-    </div>
-
-    <div class="card w-full max-w-sm bg-base-100 shadow-xl">
-      <div class="card-body">
-        <form method="POST" autocomplete="off">
-          <div class="mb-4">
-            <label class="input input-bordered flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-                <path fill-rule="evenodd" d="M8 7a5 5 0 1 1 3.61 4.804l-1.903 1.903A1 1 0 0 1 9 14H8v1a1 1 0 0 1-1 1H6v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 .293-.707L8.196 8.39A5.002 5.002 0 0 1 8 7Zm5-3a.75.75 0 0 0 0 1.5A1.5 1.5 0 0 1 14.5 7 .75.75 0 0 0 16 7a3 3 0 0 0-3-3Z" clip-rule="evenodd" />
-              </svg>
-              <input
+<LoginLayout title="pin login">
+  <form method="POST" autocomplete="off">
+    <div class="mb-4">
+        <label class="input input-bordered border-2 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 opacity-40">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+            </svg>
+            <input
                 class="grow"
                 name="pin"
                 type="password"
@@ -66,26 +58,22 @@ if (Astro.request.method === "POST") {
                 aria-required="true"
                 aria-label="Enter your pin"
                 autocomplete="off"
-              />
-            </label>
-          </div>
-          <div class="mb-4">
-            <ErrorCapture errors={errors} />
-          </div>
-          <div>
-            <button type="submit" class="btn btn-neutral w-full">Login</button>
-          </div>
-        </form>
-      </div>
+            />
+        </label>
     </div>
-
-    <CopyrightFooter />
-  </div>
-</BaseLayout>
+    <div class="mb-4">
+        <ErrorCapture errors={errors} />
+    </div>
+    <div>
+        <button type="submit" class="btn btn-neutral w-full">Login</button>
+    </div>
+  </form>
+</LoginLayout>
 
 <script>
-  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_STATIC_TOKEN} from "../../../libs/config"
+  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_ROLE_NAME, COOKIE_KEY_USER_STATIC_TOKEN} from "../../../libs/config"
 
   document.cookie = `${COOKIE_KEY_USER_ORG_ID}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  document.cookie = `${COOKIE_KEY_USER_ROLE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 </script>

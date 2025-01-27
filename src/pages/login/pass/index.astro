@@ -1,0 +1,104 @@
+---
+import ErrorCapture from "../../../components/ErrorCapture.astro";
+import LoginLayout from "../../../layouts/LoginLayout.astro";
+
+import C from "../../../libs/config"
+import { directusClientAuth, directusClientNoAuth } from "../../../libs/directus";
+
+import { login, readItems, readMe, updateMe, withToken, type DirectusUser } from "@directus/sdk";
+import { logger } from '@it-astro:logger';
+
+let errors: any = {}
+
+if (Astro.request.method === "POST") {
+  const data = await Astro.request.formData();
+  const email = String(data.get("email"))
+  const password = String(data.get("password"))
+  
+  try {
+    const {access_token: accessToken} = await directusClientAuth.request(login(email, password))
+    if(!accessToken) throw new Error("Failed to retrieve access token.");
+
+    const { id: userId, role: { name: userRoleName } } = await directusClientNoAuth.request(withToken(accessToken, readMe({fields: ["id", "role.name"]})))
+    if(!userId) throw new Error("Failed to retrieve user id.");
+    if(!userRoleName) throw new Error("Failed to retrieve user role.");
+
+    const pinResponse = await directusClientAuth.request(readItems("lms_actor_access", {
+      filter: {user_id: userId},
+      alias: {unmasked_token: "token"},
+      fields: ["user_id.unmasked_token", "organization_id.id"],
+    }))
+    if(!pinResponse.length) throw new Error("Failed to retrieve a pin.");
+
+    const [{
+      user_id: {unmasked_token: unmaskedToken},
+      organization_id: {id: orgId}
+    }] = pinResponse
+
+    await directusClientNoAuth.request<DirectusUser>(withToken(unmaskedToken, updateMe({last_access: new Date().toISOString() as "datetime"})))
+
+    Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+    Astro.cookies.set(C.COOKIE_KEY_USER_ROLE_NAME, userRoleName, {path: "/"})
+    Astro.cookies.set(C.COOKIE_KEY_USER_STATIC_TOKEN, unmaskedToken, {path: "/"})
+
+    return Astro.redirect(Astro.url.searchParams.get('after_auth') || "/dashboard")
+  } catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+  }
+}
+
+---
+
+<LoginLayout title="password login">
+    <form method="POST">
+        <div class="mb-4">
+            <label class="input input-bordered border-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5 opacity-40">
+                    <path fill-rule="evenodd" d="M17.834 6.166a8.25 8.25 0 1 0 0 11.668.75.75 0 0 1 1.06 1.06c-3.807 3.808-9.98 3.808-13.788 0-3.808-3.807-3.808-9.98 0-13.788 3.807-3.808 9.98-3.808 13.788 0A9.722 9.722 0 0 1 21.75 12c0 .975-.296 1.887-.809 2.571-.514.685-1.28 1.179-2.191 1.179-.904 0-1.666-.487-2.18-1.164a5.25 5.25 0 1 1-.82-6.26V8.25a.75.75 0 0 1 1.5 0V12c0 .682.208 1.27.509 1.671.3.401.659.579.991.579.332 0 .69-.178.991-.579.3-.4.509-.99.509-1.671a8.222 8.222 0 0 0-2.416-5.834ZM15.75 12a3.75 3.75 0 1 0-7.5 0 3.75 3.75 0 0 0 7.5 0Z" clip-rule="evenodd" />
+                </svg>
+                <input
+                    class="grow"
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    required
+                    aria-required="true"
+                    aria-label="Enter your email"
+                    autocomplete="on"
+                />
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered border-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 opacity-40">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                </svg>
+                <input
+                    class="grow"
+                    name="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    required
+                    aria-required="true"
+                    aria-label="Enter your password"
+                    autocomplete="on"
+                />
+            </label>
+        </div>
+        <div class="mb-4">
+            <ErrorCapture errors={errors} />
+        </div>
+        <div>
+            <button type="submit" class="btn btn-neutral w-full">Login</button>
+        </div>
+    </form>
+</LoginLayout>
+
+<script>
+  import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_ROLE_NAME, COOKIE_KEY_USER_STATIC_TOKEN} from "../../../libs/config"
+
+  document.cookie = `${COOKIE_KEY_USER_ORG_ID}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  document.cookie = `${COOKIE_KEY_USER_ROLE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+</script>

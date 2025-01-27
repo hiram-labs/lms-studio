@@ -11,8 +11,9 @@ import { getQueryParam } from "../../../../libs/utils"
 import { readItems, withToken } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
 
+const ORG_ID = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
-if(!TOKEN) return Astro.redirect("/login/pin")
+if(!ORG_ID || !TOKEN) return Astro.redirect(`/login/pin?after_auth=${Astro.url.pathname}${Astro.url.search}`)
 
 let errors: any = []
 let contentResponse: any = {}
