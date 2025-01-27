@@ -10,7 +10,7 @@
 
     let table: Tabulator;
 
-    const handleResendPinEmail = async (e: UIEvent, cell: CellComponent) => {
+    const handleResendPinEmail = async (_e: UIEvent, cell: CellComponent) => {
         try {
             const data = cell.getData()
             const response = await fetch("/api/misc-util", {

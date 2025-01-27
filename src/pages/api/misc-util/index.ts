@@ -13,8 +13,8 @@ const miscUtilFuncMap: Record<
     data: TMiscUtilReqPayloadData[TMiscUtilReqPayloadFunctions]
   ) => Promise<string>
 > = {
-  "resend-trainee-email": resendTraineeEmail,
-  "add-trainees": addTrainees,
+  "resend-trainee-email": resendTraineeEmail as any,
+  "add-trainees": addTrainees as any,
 };
 
 export const POST: APIRoute = async ({ params, request }) => {
