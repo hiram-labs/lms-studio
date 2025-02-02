@@ -1,24 +1,33 @@
 ---
 import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
 import ErrorCapture from "../../../../components/ErrorCapture.astro";
-import C from "../../../../libs/config"
-import { directusClientNoAuth } from "../../../../libs/directus";
+import DashboardBreadcrumb from "../../../../components/DashboardBreadcrumb.astro";
+import DashboardCurrentOrgSelector from "../../../../components/DashboardCurrentOrgSelector.astro";
 
-import { readItem, readItems, readMe, withToken, type DirectusUser } from "@directus/sdk";
+import C from "../../../../libs/config"
+import { directusClientNoAuth, fetchAccessibleOrganizations } from "../../../../libs/directus";
+
+import { readMe, withToken } from "@directus/sdk";
 import { logger } from '@it-astro:logger';
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const orgId = data.get("org") || ""
+    if(orgId) Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+}
 
 let errors: any = []
 let userResponse: any = {}
-let orgResponse: any = {}
+let orgResponses: any = []
 
-const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
 const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
-if(!ORG || !TOKEN) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+const ROLE = Astro.cookies.get(C.COOKIE_KEY_USER_ROLE_NAME)?.value
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+if(!TOKEN || !ORG || !ROLE) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
 
 try {
-    userResponse = await directusClientNoAuth.request<DirectusUser>(withToken(TOKEN, readMe({fields: ["first_name","last_name","email","role.name"]})))
-    // orgResponse = await directusClientNoAuth.request(withToken(TOKEN, readItem("lms_organization", ORG)))
-
+    userResponse = await directusClientNoAuth.request(withToken(TOKEN, readMe({fields: ["first_name","last_name","email","role.name"]})))
+    orgResponses = await fetchAccessibleOrganizations(TOKEN, ROLE)
 } catch (error) {
     errors = (error as any)?.errors || [{ message: (error as any).message || error }];
     errors.forEach((error: any) => {logger.error(error.message)});
@@ -28,6 +37,16 @@ try {
 
 <DashboardLayout title="user profile dashboard">
     <ErrorCapture errors={errors}>
+        <div class="mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-1 sm:space-y-0">
+                <div class="flex items-center sm:order-1 sm:flex-grow">
+                <DashboardBreadcrumb />
+                </div>
+                <div class="flex items-center sm:order-2 sm:flex-none">
+                <DashboardCurrentOrgSelector orgId={ORG} orgs={orgResponses} />
+                </div>
+            </div>
+        </div>
         <div>
             <div class="card bg-base-200 w-full max-w-2xl">
                 <div class="card-body items-start">
