@@ -119,12 +119,14 @@ let errors: any = []
         Android.onModuleDownloadComplete()
         addColorsToTimelineItem(moduleDownload)
         moduleInstall.classList.remove("hidden")
+        moduleInstall.scrollIntoView({ behavior: "smooth" })
     }
 
     Android.onModuleInstallSuccess = () => {
         Android.onModuleInstallComplete()
         addColorsToTimelineItem(moduleInstall)
         moduleStart.classList.remove("hidden")
+        moduleStart.scrollIntoView({ behavior: "smooth" })
     }
 
     Android.onUnhandledException = (e) => {
