@@ -1,53 +1,91 @@
-# Astro Starter Kit: Basics
+# Xrtemis Studio
 
-```sh
-npm create astro@latest -- --template basics
-```
+A modern Learning Management System (LMS) built with Astro for managing training modules, trainees, and XR headset onboarding.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Features
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- **Dashboard**: Centralized management interface for organizations, modules, and trainees
+- **Trainee Management**: Comprehensive overview and onboarding of trainees
+- **Module Subscriptions**: Track and manage module access for users
+- **XR Headset Onboarding**: Step-by-step guides for headset setup, APK installation, and device connection
+- **API Endpoints**: RESTful APIs for data management and integrations
+- **Documentation**: Integrated documentation system using MDX
+- **Responsive Design**: Built with Tailwind CSS for mobile-first responsive UI
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+## Tech Stack
 
-## 🚀 Project Structure
+- **Frontend**: Astro, TypeScript, Tailwind CSS, DaisyUI
+- **Backend**: Directus (headless CMS)
+- **Database**: Via Directus (supports PostgreSQL, MySQL, etc.)
+- **XR Integration**: Android Debug Bridge (ADB) libraries for headset management
+- **Tables**: Tabulator.js for advanced data tables
+- **Deployment**: Node.js adapter for server-side rendering
 
-Inside of your Astro project, you'll see the following folders and files:
+## Prerequisites
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+- Node.js (v18 or higher)
+- Directus instance running (for backend data management)
+- ADB-compatible XR headsets (for headset onboarding features)
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Installation
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd xrtemis-studio
+   ```
 
-Any static assets, like images, can be placed in the `public/` directory.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## 🧞 Commands
+3. Set up environment variables:
+   Create a `.env` file in the root directory with:
+   ```env
+   DIRECTUS_ACCESS_TOKEN=your_directus_token
+   DIRECTUS_API_PROTOCOL=http
+   DIRECTUS_API_HOST=localhost
+   DIRECTUS_API_PORT=8055
+   ```
 
-All commands are run from the root of the project, from a terminal:
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+   The application will be available at `http://localhost:4321`
+
+## Build & Deployment
+
+1. Build for production:
+   ```bash
+   npm run build
+   ```
+
+2. Preview the build:
+   ```bash
+   npm run preview
+   ```
+
+## API Endpoints
+
+- `/api/misc-util/` - Utility functions for trainee management
+- `/api/module-access/[org_id]/[user_token]` - Module access verification
+- `/api/public-util/` - Public utilities
+- `/api/table-data/` - Data for dashboard tables
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 👀 Want to learn more?
 
