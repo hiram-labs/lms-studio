@@ -2,7 +2,7 @@ import { directusClientNoAuth } from "../../../libs/directus";
 import C from "../../../libs/config";
 
 import { logger } from "@it-astro:logger";
-import { createItem, readMe, withToken, deleteItem } from "@directus/sdk";
+import { createItem, readMe, withToken } from "@directus/sdk";
 
 export default async (
   cookie: TApiReqCookie,
