@@ -1,0 +1,58 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import TableDeviceOverview from "../../../../components/TableDeviceOverview.astro";
+
+import C from "../../../../libs/config"
+import { fetchAccessibleOrganizations } from "../../../../libs/directus";
+
+import { logger } from '@it-astro:logger';
+import DashboardBreadcrumb from "../../../../components/DashboardBreadcrumb.astro";
+import DashboardCurrentOrgSelector from "../../../../components/DashboardCurrentOrgSelector.astro";
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const orgId = data.get("org") || ""
+    if(orgId) Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+}
+
+let errors: any = []
+let orgResponses: any = []
+
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+const ROLE = Astro.cookies.get(C.COOKIE_KEY_USER_ROLE_NAME)?.value
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+if(!TOKEN || !ORG || !ROLE) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    orgResponses = await fetchAccessibleOrganizations(TOKEN, ROLE)
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="device overview dashboard">
+    <ErrorCapture errors={errors}>
+        <div class="mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-1 sm:space-y-0">
+                <div class="flex items-center sm:order-1 sm:flex-grow">
+                <DashboardBreadcrumb />
+                </div>
+                <div class="flex items-center sm:order-2 sm:flex-none">
+                <DashboardCurrentOrgSelector orgId={ORG} orgs={orgResponses} />
+                </div>
+            </div>
+        </div>
+        <div class="prose">
+            <h2>Manage onboarded devices</h2>
+            <p class="text-sm">
+                View and manage devices that have been onboarded in your organization.
+            </p>
+        </div>
+        <div class="mt-6">
+            <TableDeviceOverview client:load />
+        </div>
+    </ErrorCapture>
+</DashboardLayout>

@@ -6,6 +6,7 @@ import { getCookieFromRequest } from "../../../libs/utils";
 
 import dashboardTraineeOverviewTable from "./dashboard-trainee-overview-table";
 import dashboardModuleSubscriptionTable from "./dashboard-module-subscription-table";
+import dashboardDeviceOverviewTable from "./dashboard-device-overview-table";
 
 const tableIdToFuncMap: Record<
   string,
@@ -13,6 +14,7 @@ const tableIdToFuncMap: Record<
 > = {
   "#dashboard-trainee-overview-table": dashboardTraineeOverviewTable,
   "#dashboard-module-subscription-table": dashboardModuleSubscriptionTable,
+  "#dashboard-device-overview-table": dashboardDeviceOverviewTable,
 };
 
 export const POST: APIRoute = async ({ params, request }) => {

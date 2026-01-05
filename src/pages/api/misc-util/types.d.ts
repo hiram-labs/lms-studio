@@ -1,4 +1,4 @@
-type TMiscUtilReqPayloadFunctions = "resend-trainee-email" | "add-trainees";
+type TMiscUtilReqPayloadFunctions = "resend-trainee-email" | "add-trainees" | "record-device-onboarding";
 
 interface TMiscUtilReqPayloadData {
   "resend-trainee-email": {
@@ -11,6 +11,11 @@ interface TMiscUtilReqPayloadData {
     pin: string;
   };
   "add-trainees": { first_name: string; last_name: string; email: string }[];
+  "record-device-onboarding": {
+    device_serial: string;
+    device_model: string;
+    device_manufacturer: string;
+  };
 }
 
 interface TMiscUtilReqPayload<

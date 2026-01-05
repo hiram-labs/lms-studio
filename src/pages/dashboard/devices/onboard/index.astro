@@ -1,0 +1,411 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import OnboardHeadsetWelcomeCard from "../../../../components/OnboardHeadsetWelcomeCard.astro";
+import OnboardHeadsetWebUsbSupportCard from "../../../../components/OnboardHeadsetWebUsbSupportCard.astro";
+import OnboardHeadsetDeviceSelectionCard from "../../../../components/OnboardHeadsetDeviceSelectionCard.astro";
+import OnboardHeadsetOpenConnectionCard from "../../../../components/OnboardHeadsetOpenConnectionCard.astro";
+import OnboardHeadsetApkDownloadCard from "../../../../components/OnboardHeadsetApkDownloadCard.astro";
+import OnboardHeadsetApkInstallCard from "../../../../components/OnboardHeadsetApkInstallCard.astro";
+import OnboardHeadsetCloseConnectionCard from "../../../../components/OnboardHeadsetCloseConnectionCard.astro";
+import OnboardHeadsetCompleteCard from "../../../../components/OnboardHeadsetCompleteCard.astro";
+
+import C from "../../../../libs/config";
+import { directusClientAuth } from "../../../../libs/directus";
+import { fetchAccessibleOrganizations } from "../../../../libs/directus";
+
+import { readItems } from "@directus/sdk";
+import { logger } from "@it-astro:logger";
+
+import DashboardBreadcrumb from "../../../../components/DashboardBreadcrumb.astro";
+import DashboardCurrentOrgSelector from "../../../../components/DashboardCurrentOrgSelector.astro";
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const orgId = data.get("org") || ""
+    if(orgId) Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+}
+
+let errors: any = []
+let appAttrResponse: any = {}
+let orgResponses: any = []
+
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+const ROLE = Astro.cookies.get(C.COOKIE_KEY_USER_ROLE_NAME)?.value
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+if(!TOKEN || !ORG || !ROLE) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+let PIPE_APP_APK_URL = ""
+let PIPE_APP_PKG_NAME = ""
+let PIPE_APP_PKG_VERSION_CODE = ""
+
+try{
+    orgResponses = await fetchAccessibleOrganizations(TOKEN, ROLE)
+
+    appAttrResponse = await directusClientAuth.request(readItems("lms_application_attribute_assignment", {
+      filter: {application_name: "pipe_application"},
+      fields: ["attribute_name", "attribute_text", "attribute_file"]
+    }))
+    PIPE_APP_APK_URL = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_file").map((item:any)=>item["attribute_file"])[0]
+    PIPE_APP_PKG_NAME = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_package_name").map((item:any)=>item["attribute_text"])[0]
+    PIPE_APP_PKG_VERSION_CODE = appAttrResponse.filter((item:any)=> item["attribute_name"] === "apk_package_version_code").map((item:any)=>item["attribute_text"])[0]
+    if(!PIPE_APP_APK_URL) throw new Error("Could not retrieve a value for pipe_application attribute apk_file");
+    if(!PIPE_APP_PKG_NAME) throw new Error("Could not retrieve a value for pipe_application attribute apk_package_name");
+    if(!PIPE_APP_PKG_VERSION_CODE) throw new Error("Could not retrieve a value for pipe_application attribute apk_package_version_code");
+    PIPE_APP_APK_URL = `${C.DIRECTUS_FILE_ASSET_URL_PREFIX}${PIPE_APP_APK_URL}?download=`
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="headset onboarding">
+    <ErrorCapture errors={errors}>
+        <div class="mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-1 sm:space-y-0">
+                <div class="flex items-center sm:order-1 sm:flex-grow">
+                <DashboardBreadcrumb />
+                </div>
+                <div class="flex items-center sm:order-2 sm:flex-none">
+                <DashboardCurrentOrgSelector orgId={ORG} orgs={orgResponses} />
+                </div>
+            </div>
+        </div>
+        <div class="prose">
+            <h2>Headset Onboarding</h2>
+            <p class="text-sm">
+                Onboard a new headset device for your organization. Ensure the headset is connected via USB and follow the steps below.
+            </p>
+        </div>
+
+        <div class="my-8">
+            <ul class="steps">
+                <li class="step" data-step-id="verify-support">Verify Support</li>
+                <li class="step" data-step-id="select-device">Select Device</li>
+                <li class="step" data-step-id="open-connection">Open Connection</li>
+                <li class="step" data-step-id="download-apk">Download APK</li>
+                <li class="step" data-step-id="install-apk">Install APK</li>
+                <li class="step" data-step-id="close-connection">Close Connection</li>
+            </ul>
+        </div>
+
+        <div class="card w-full max-w-5xl min-h-96 bg-base-100 shadow-xl">
+            <div class="card-body" data-pipe-app-attr data-pipe-app-apk-url={PIPE_APP_APK_URL} data-pipe-app-pkg-name={PIPE_APP_PKG_NAME} data-pipe-app-pkg-version-code={PIPE_APP_PKG_VERSION_CODE}>
+                <OnboardHeadsetWelcomeCard stepId="onboarding-welcome"/>
+                <OnboardHeadsetWebUsbSupportCard stepId="verify-support"/>
+                <OnboardHeadsetDeviceSelectionCard stepId="select-device" />
+                <OnboardHeadsetOpenConnectionCard stepId="open-connection"/>
+                <OnboardHeadsetApkDownloadCard stepId="download-apk"/>
+                <OnboardHeadsetApkInstallCard stepId="install-apk"/>
+                <OnboardHeadsetCloseConnectionCard stepId="close-connection"/>
+                <OnboardHeadsetCompleteCard stepId="onboarding-complete"/>
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>
+
+<script>
+    import AdbWebCredentialStore from "@yume-chan/adb-credential-web";
+    import { PackageManager } from "@yume-chan/android-bin";
+    import { type ReadableWritablePair, Consumable } from "@yume-chan/stream-extra";
+    import { type AdbPacketData,type AdbPacketInit, Adb, AdbDaemonTransport } from "@yume-chan/adb";
+    import { AdbDaemonWebUsbDeviceManager, AdbDaemonWebUsbDevice } from "@yume-chan/adb-daemon-webusb";
+
+    import { wrapPromiseWithTimeout, fetchApkFileWithProgress, delay } from "../../../../libs/utils";
+
+    const elem = document.querySelector('[data-pipe-app-attr]') as HTMLElement;
+    const PIPE_APP_APK_URL = elem?.dataset.pipeAppApkUrl!;
+    const PIPE_APP_PKG_NAME = elem?.dataset.pipeAppPkgName!;
+    const PIPE_APP_PKG_VERSION_CODE = elem?.dataset.pipeAppPkgVersionCode!;
+
+    const progressStruct: {
+        stepElements: NodeListOf<HTMLElement>
+        stepCardVisibilityHandler(el:HTMLElement): void
+        stepCardErrorAlertHandler(el:HTMLElement,err:Error): void
+        success(el:HTMLElement): void
+        error(el:HTMLElement): void
+        reset(): void;
+        complete(): void;
+    } = {
+        stepElements: document.querySelectorAll<HTMLElement>("li.step"),
+        stepCardVisibilityHandler(stepElement){
+            const stepId = stepElement.getAttribute("data-step-id")
+            const stepCard = document.querySelector(`[data-step-cards][data-step-card-id=${stepId}]`)
+            const stepCards = document.querySelectorAll("[data-step-cards]")
+            stepCards.forEach(el=>el.classList.add("hidden"))
+            stepCard?.classList.remove("hidden")
+
+        },
+        stepCardErrorAlertHandler(stepElement,err){
+            const stepId = stepElement.getAttribute("data-step-id")
+            const stepCard = document.querySelector(`[data-step-cards][data-step-card-id=${stepId}]`)
+            const stepErrorNameElement = stepCard?.querySelector("[data-step-error-name]") as HTMLElement
+            stepErrorNameElement.textContent = err.name
+            const stepErrorMessageElement = stepCard?.querySelector("[data-step-error-message]") as HTMLElement
+            stepErrorMessageElement.textContent = err.message
+            const stepErrorElements = stepCard?.querySelectorAll("[data-step-error-group]")
+            stepErrorElements?.forEach(el=>{
+                el.classList.toggle("hidden")
+            })
+        },
+        success(stepElement){
+            stepElement.classList.add("step-warning")
+            this.stepElements.forEach(el=>{
+                el.classList.remove("step-error", "step-warning")
+                el.removeAttribute("data-content")
+                // if el comes before stepElement.
+                if (el.compareDocumentPosition(stepElement) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                    el.classList.add("step-success")
+                    el.dataset.content = "✓"
+                }
+            })
+            stepElement.classList.add("step-success")
+            stepElement.dataset.content = "✓"
+            stepElement.nextElementSibling?.classList.add("step-warning")
+        },
+        error(stepElement){
+            this.stepElements.forEach(el=>{
+                // if el comes after stepElement.
+                if (el.compareDocumentPosition(stepElement) & Node.DOCUMENT_POSITION_PRECEDING) {
+                    el.classList.remove("step-success", "step-error", "step-warning")
+                    el.removeAttribute("data-content")
+                }
+            })
+            stepElement.classList.add("step-error")
+            stepElement.dataset.content = "✗"
+        },
+        reset(){
+            this.stepElements.forEach(el=>{
+                el.classList.remove("step-success", "step-error", "step-warning")
+                el.removeAttribute("data-content")
+            })
+        },
+        complete(){
+            this.stepElements.forEach(el=>{
+                el.classList.remove("step-error", "step-warning")
+                el.classList.add("step-success")
+                el.dataset.content = "✓"
+            })
+        }
+    }
+
+    const [
+        CHECK_WEBUSB_SUPPORT,
+        PROMPT_DEVICE_SELECTION,
+        OPEN_CONNECTION,
+        DOWNLOAD_APK,
+        INSTALL_APK,
+        CLOSE_CONNECTION,
+
+    ] = Array.from(progressStruct.stepElements).map(el => el.getAttribute("data-step-id"));
+
+    const progressNotification = <T,>(
+        status: "SUCCESS" | "ERROR" | "RESET" | "COMPLETE", stepId?: string | null,
+        callback?: (stepElement:HTMLElement)=>Promise<T>
+    ) => {
+        return new Promise<T>((resolve, reject) => {
+            let defaultReturnValue: T = {} as T;;
+            const stepElement = document.querySelector(`[data-step-id=${stepId}]`) as HTMLElement
+            switch (status) {
+                case "SUCCESS": {
+                    progressStruct.stepCardVisibilityHandler(stepElement)
+                    if(callback) {
+                        callback(stepElement).then(ret => {
+                            progressStruct.success(stepElement)
+                            resolve(ret)
+                        }).catch(reject)
+                    } else {
+                        progressStruct.success(stepElement)
+                        resolve(defaultReturnValue)
+                    }
+                    break;
+                }
+                case "ERROR": {
+                    progressStruct.stepCardVisibilityHandler(stepElement)
+                    if(callback) {
+                        callback(stepElement).then(ret => {
+                            progressStruct.error(stepElement)
+                            resolve(ret)
+                        }).catch(reject)
+                    } else {
+                        progressStruct.error(stepElement)
+                        resolve(defaultReturnValue)
+                    }
+                    break;
+                }
+                case "RESET": {
+                    const OnboardHeadsetWelcomeCard = document.createElement('div');
+                    OnboardHeadsetWelcomeCard.dataset.stepId = "onboarding-welcome";
+                    progressStruct.stepCardVisibilityHandler(OnboardHeadsetWelcomeCard)
+                    if(callback) {
+                        callback(stepElement).then(ret => {
+                            progressStruct.reset()
+                            resolve(ret)
+                        }).catch(reject)
+                    } else {
+                        progressStruct.reset()
+                        resolve(defaultReturnValue)
+                    }
+                    break;
+                }
+                case "COMPLETE": {
+                    const OnboardHeadsetCompleteCard = document.createElement('div');
+                    OnboardHeadsetCompleteCard.dataset.stepId = "onboarding-complete";
+                    progressStruct.stepCardVisibilityHandler(OnboardHeadsetCompleteCard)
+                    if(callback) {
+                        callback(stepElement).then(ret => {
+                            progressStruct.complete()
+                            resolve(ret)
+                        }).catch(reject)
+                    } else {
+                        progressStruct.complete()
+                        resolve(defaultReturnValue)
+                    }
+                    break;
+                }
+                default:
+                    const error = new Error(`The progress notification status ${status} is not a recognised status type`)
+                    error.name = "UnknownProgressNotificationStatus"
+                    reject(error)
+                    break;
+            }
+         })
+    }
+
+    // --- handle start installing apk on btn click ---
+    let manager:  AdbDaemonWebUsbDeviceManager | undefined
+    let device: AdbDaemonWebUsbDevice | undefined
+    let connection: ReadableWritablePair<AdbPacketData, Consumable<AdbPacketInit>>
+    let transport: AdbDaemonTransport
+    let adb: Adb | undefined
+    const credentialStore: AdbWebCredentialStore = new AdbWebCredentialStore()
+    const DEVICE_AUTH_TIMEOUT = 30000
+
+    const cta = document.getElementById("apk-install-cta");
+    if(cta) {
+        cta.addEventListener('click', async (e: Event) => {
+            e.preventDefault();
+
+            let recordedDeviceId: string | null = null;
+
+            try {
+                manager = await progressNotification("SUCCESS", CHECK_WEBUSB_SUPPORT, async () => AdbDaemonWebUsbDeviceManager.BROWSER)
+                if (!manager){
+                    const error = new Error("WebUSB is not supported in this browser!");
+                    error.name = "WebUSBError"
+                    throw error;
+                }
+
+                device = await progressNotification("SUCCESS", PROMPT_DEVICE_SELECTION, async () =>  await manager!.requestDevice())
+                if (!device) {
+                    const error = new Error("Device selection dismissed by user!");
+                    error.name = "DeviceSelectionDismissed"
+                    throw error;
+                }
+                connection = await progressNotification("SUCCESS", PROMPT_DEVICE_SELECTION, async () => await device!.connect())
+
+                transport = await progressNotification("SUCCESS", OPEN_CONNECTION, async () => await wrapPromiseWithTimeout(
+                    AdbDaemonTransport.authenticate({ serial: device!.serial, connection, credentialStore }), DEVICE_AUTH_TIMEOUT
+                ));
+
+                adb = new Adb(transport);
+                const pm = new PackageManager(adb);
+
+                // Record the device onboarding first
+                const recordResponse = await fetch('/api/misc-util/record-device-onboarding', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_serial: device!.serial,
+                        device_model: device!.raw.productName || 'Unknown',
+                        device_manufacturer: device!.raw.manufacturerName || 'Unknown'
+                    })
+                });
+                const recordData = await recordResponse.json();
+                if (!recordData.success) {
+                    throw new Error("Failed to record device onboarding");
+                }
+                recordedDeviceId = recordData.device_id;
+
+                const packages = pm.listPackages({showVersionCode: true})
+                for await (const pkg of packages){
+                    if(pkg.packageName === PIPE_APP_PKG_NAME && (pkg.versionCode||Infinity) < parseInt(PIPE_APP_PKG_VERSION_CODE)) {
+                        pm.uninstall(pkg.packageName)
+                    } else if(pkg.packageName === PIPE_APP_PKG_NAME) {
+                        // Device is already properly onboarded
+                        await progressNotification("COMPLETE")
+                        return
+                    }
+
+                }
+
+                const {fileSize, file} = await progressNotification("SUCCESS", DOWNLOAD_APK, async (stepElement) => await fetchApkFileWithProgress(
+                    PIPE_APP_APK_URL,
+                    (percentage) => {
+                        const stepId = stepElement.getAttribute("data-step-id")
+                        const downloadProgressElement = document.querySelector(`[data-step-cards][data-step-card-id=${stepId}] .radial-progress`) as HTMLElement
+                        downloadProgressElement.style.setProperty('--value', percentage.toString());
+                        downloadProgressElement.textContent = `${percentage}%`;
+                    }
+                ))
+
+                await progressNotification("SUCCESS", INSTALL_APK, async () => await pm.installStream(fileSize, file ))
+                await progressNotification("SUCCESS", CLOSE_CONNECTION, async () => await delay(2500))
+
+                await progressNotification("COMPLETE")
+            } catch (error) {
+                console.error("Onboarding failed:", error);
+                // Device record remains as created, no need to update status
+
+                if(error instanceof Error && error.name === "WebUSBError"){
+                    // the browser does not support webusb
+                    await progressNotification("ERROR", CHECK_WEBUSB_SUPPORT, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if (error instanceof Error && error.name === "SecurityError") {
+                    // the device can only be requested in response to a click event (await promises in the onclick callback may cause this error)
+                    await progressNotification("ERROR", PROMPT_DEVICE_SELECTION, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if (error instanceof Error && error.name === "NetworkError") {
+                    // the device is in use by another application
+                    await progressNotification("ERROR", PROMPT_DEVICE_SELECTION, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if(error instanceof Error && error.name === "DeviceSelectionDismissed"){
+                    // user cancelled device selection pop up [special case show no alert just reset onboarding]
+                    await progressNotification("RESET", PROMPT_DEVICE_SELECTION)
+                } else if (error instanceof Error && error.name === "OperationTimeout") {
+                    // manual timeout for waiting for auth connection user may have to action popup in headset
+                    await progressNotification("ERROR", OPEN_CONNECTION, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                }else if (error instanceof Error && error.name === "APKFetchError") {
+                    // downloading the apk file resulted in an error
+                    await progressNotification("ERROR", DOWNLOAD_APK, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("failed to fetch")) {
+                    // error reaching the server hosting apk file [maybe CORS/TIMEOUT/SSL]
+                    await progressNotification("ERROR", DOWNLOAD_APK, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else if (error instanceof Error && error.message.toLocaleLowerCase().includes("install_failed_already_exists")) {
+                    // error attempt to reinstall existing pkg without first uninstall
+                    await progressNotification("ERROR", INSTALL_APK, async (stepElement) => {
+                        progressStruct.stepCardErrorAlertHandler(stepElement, error)
+                    })
+                } else {
+                    console.error(error)
+                    // TODO: create a directus endpoint to send this there
+                }
+            } finally {
+                if(adb) await adb.close()
+                if(manager) (await manager.getDevices()).map(device => device.raw.forget())
+            }
+        });
+    };
+</script>

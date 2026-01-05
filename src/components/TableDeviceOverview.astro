@@ -1,0 +1,42 @@
+---
+
+---
+
+<div id="dashboard-device-overview-table" />
+
+<script>
+    import {TabulatorFull as Tabulator} from "tabulator-tables";
+
+    let table: Tabulator;
+
+    const tableId = "#dashboard-device-overview-table"
+    table = new Tabulator(tableId, {
+        layout: "fitColumns",
+        layoutColumnsOnNewData:true,
+        responsiveLayout:true,
+        maxHeight: 650,
+        pagination: true,
+        paginationSize: 10,
+        paginationSizeSelector: true,
+        paginationCounter: "rows",
+        paginationMode: "remote",
+        sortMode:"remote",
+        filterMode: "remote",
+        index: "id",
+        ajaxLoader: true,
+        ajaxConfig: "POST",
+        ajaxContentType: "json",
+        ajaxFiltering: true,
+        ajaxSorting: true,
+        ajaxParams: { id: tableId},
+        ajaxURL: "/api/table-data/",
+        columns: [
+            {title:"Device Serial", field:"device_serial", width:200},
+            {title:"Model", field:"device_model"},
+            {title:"Manufacturer", field:"device_manufacturer"},
+            {title:"Created By", field:"created_by"},
+            {title:"Created At", field:"created_at", width:160, formatter:(cell) => cell.getValue() ? new Date(cell.getValue()).toLocaleDateString("en-GB") : ""},
+        ],
+    });
+
+</script>

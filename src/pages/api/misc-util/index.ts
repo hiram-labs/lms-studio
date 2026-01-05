@@ -5,6 +5,7 @@ import { logger } from "@it-astro:logger";
 import { getCookieFromRequest } from "../../../libs/utils";
 import resendTraineeEmail from "./resend-trainee-email";
 import addTrainees from "./add-trainees";
+import recordDeviceOnboarding from "./record-device-onboarding";
 
 const miscUtilFuncMap: Record<
   TMiscUtilReqPayloadFunctions,
@@ -15,6 +16,7 @@ const miscUtilFuncMap: Record<
 > = {
   "resend-trainee-email": resendTraineeEmail as any,
   "add-trainees": addTrainees as any,
+  "record-device-onboarding": recordDeviceOnboarding as any,
 };
 
 export const POST: APIRoute = async ({ params, request }) => {
