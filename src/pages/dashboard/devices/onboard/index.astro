@@ -313,15 +313,18 @@ try{
                 const pm = new PackageManager(adb);
 
                 // Record the device onboarding first
-                const recordResponse = await fetch('/api/misc-util/record-device-onboarding', {
+                const recordResponse = await fetch('/api/misc-util', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        device_serial: device!.serial,
-                        device_model: device!.raw.productName || 'Unknown',
-                        device_manufacturer: device!.raw.manufacturerName || 'Unknown'
+                        function: 'record-device-onboarding',
+                        data: {
+                            device_serial: device!.serial,
+                            device_model: device!.raw.productName || 'Unknown',
+                            device_manufacturer: device!.raw.manufacturerName || 'Unknown'
+                        }
                     })
                 });
                 const recordData = await recordResponse.json();
