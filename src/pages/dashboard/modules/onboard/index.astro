@@ -1,0 +1,301 @@
+---
+import DashboardLayout from "../../../../layouts/DashboardLayout.astro";
+import ErrorCapture from "../../../../components/ErrorCapture.astro";
+import DashboardBreadcrumb from "../../../../components/DashboardBreadcrumb.astro";
+import DashboardCurrentOrgSelector from "../../../../components/DashboardCurrentOrgSelector.astro";
+
+import C from "../../../../libs/config"
+import { directusClientNoAuth, fetchAccessibleOrganizations } from "../../../../libs/directus";
+
+import { logger } from "@it-astro:logger";
+import { readItems, withToken } from "@directus/sdk";
+
+if (Astro.request.method === "POST") {
+    const data = await Astro.request.formData();
+    const orgId = data.get("org") || ""
+    if(orgId) Astro.cookies.set(C.COOKIE_KEY_USER_ORG_ID, orgId, {path: "/"})
+}
+
+let errors: any = []
+let orgResponses: any = []
+let availableModules: any = []
+
+const TOKEN = Astro.cookies.get(C.COOKIE_KEY_USER_STATIC_TOKEN)?.value
+const ROLE = Astro.cookies.get(C.COOKIE_KEY_USER_ROLE_NAME)?.value
+const ORG = Astro.cookies.get(C.COOKIE_KEY_USER_ORG_ID)?.value
+if(!TOKEN || !ORG || !ROLE) return Astro.redirect(`/login/pass?after_auth=${Astro.url.pathname}`)
+
+try {
+    orgResponses = await fetchAccessibleOrganizations(TOKEN, ROLE)
+    
+    const allModules = await directusClientNoAuth.request(
+        withToken(TOKEN, readItems("lms_content", {
+            fields: ["id", "content_title", "content_description"],
+            sort: ["content_title"]
+        }))
+    )
+    
+    const subscribedModules = await directusClientNoAuth.request(
+        withToken(TOKEN, readItems("lms_organization_content_assignment", {
+            filter: { organization_id: ORG },
+            fields: ["content_id.id"]
+        }))
+    )
+    
+    const subscribedModuleIds = subscribedModules.map((item: any) => item.content_id?.id)
+    
+    availableModules = allModules.filter((module: any) => !subscribedModuleIds.includes(module.id))
+} catch (error) {
+    errors = (error as any)?.errors || [{ message: (error as any).message || error }];
+    errors.forEach((error: any) => {logger.error(error.message)});
+}
+
+---
+
+<DashboardLayout title="module onboarding dashboard">
+    <ErrorCapture errors={errors}>
+        <div class="mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-1 sm:space-y-0">
+                <div class="flex items-center sm:order-1 sm:flex-grow">
+                <DashboardBreadcrumb />
+                </div>
+                <div class="flex items-center sm:order-2 sm:flex-none">
+                <DashboardCurrentOrgSelector orgId={ORG} orgs={orgResponses} />
+                </div>
+            </div>
+        </div>
+        <div class="mb-36">
+            <div class="prose">
+                <h2>Add new modules to the platform</h2>
+                <p class="text-sm">
+                    Configure and onboard new training modules for your organization. Manage module settings and availability.
+                </p>
+            </div>
+            
+            <div class="mt-6">
+                <div class="mb-6 flex justify-end">
+                    <div class="join">
+                        <div class="join-item btn btn-neutral pointer-events-none">
+                            <span id="selected-count" class="font-bold">0</span>
+                            <span class="ml-1">selected</span>
+                        </div>
+                        <button 
+                            id="subscribe-btn" 
+                            class="join-item btn btn-neutral"
+                            disabled
+                        >
+                            Subscribe to Modules
+                        </button>
+                    </div>
+                </div>
+
+                <div id="error-state" class="hidden mb-4">
+                    <div role="alert" class="alert alert-error shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span id="error-message">Failed to subscribe to modules</span>
+                    </div>
+                </div>
+               {availableModules.length === 0 ? (
+                    <div class="p-2">
+                        <div class="alert alert-success shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">All Modules Subscribed</h3>
+                                <div class="text-sm">Your organization has now subscribed to all available modules.</div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div id="modules-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {availableModules.map((module: any) => (
+                            <div 
+                                class="card glass cursor-pointer border-2 border-transparent"
+                                data-module-id={module.id}
+                            >
+                                <div class="card-body">
+                                    <div class="flex items-start gap-4">
+                                        <div class="form-control">
+                                            <label class="label cursor-pointer p-0">
+                                                <input 
+                                                    type="checkbox" 
+                                                    class="checkbox checkbox-lg" 
+                                                    data-module-checkbox={module.id}
+                                                />
+                                            </label>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h2 class="card-title text-lg mb-2">{module.content_title}</h2>
+                                            <p class="text-sm text-base-content/70 line-clamp-3">
+                                             
+    {module.content_description || 'No description available'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div id="success-toast" class="toast toast-top toast-end hidden z-50">
+                    <div class="alert alert-success shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span id="success-message">Modules subscribed successfully!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ErrorCapture>
+</DashboardLayout>
+
+<script>
+    let selectedModules = new Set<string>();
+
+    const errorState = document.getElementById('error-state');
+    const modulesGrid = document.getElementById('modules-grid');
+    const subscribeBtn = document.getElementById('subscribe-btn') as HTMLButtonElement;
+    const selectedCount = document.getElementById('selected-count');
+    const successToast = document.getElementById('success-toast');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+
+    function updateUI() {
+        if (selectedCount) {
+            selectedCount.textContent = selectedModules.size.toString();
+        }
+        if (subscribeBtn) {
+            subscribeBtn.disabled = selectedModules.size === 0;
+            if (selectedModules.size > 0) {
+                subscribeBtn.classList.add('btn-active');
+            } else {
+                subscribeBtn.classList.remove('btn-active');
+            }
+        }
+    }
+
+    function showToast(message: string, duration = 3000) {
+        if (successMessage && successToast) {
+            successMessage.textContent = message;
+            successToast.classList.remove('hidden');
+            setTimeout(() => {
+                successToast.classList.add('hidden');
+            }, duration);
+        }
+    }
+
+    function setupCardListeners() {
+        const cards = document.querySelectorAll('[data-module-id]');
+        
+        cards.forEach(card => {
+            const moduleId = card.getAttribute('data-module-id');
+            if (!moduleId) return;
+            
+            const checkbox = card.querySelector(`[data-module-checkbox="${moduleId}"]`) as HTMLInputElement;
+            
+            const toggleSelection = () => {
+                if (selectedModules.has(moduleId)) {
+                    selectedModules.delete(moduleId);
+                    checkbox.checked = false;
+                    card.classList.remove('border-primary');
+                    card.classList.add('border-transparent');
+                } else {
+                    selectedModules.add(moduleId);
+                    checkbox.checked = true;
+                    card.classList.remove('border-transparent');
+                    card.classList.add('border-primary');
+                }
+                updateUI();
+            };
+
+            card.addEventListener('click', (e) => {
+                if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                    toggleSelection();
+                }
+            });
+
+            checkbox.addEventListener('change', (e) => {
+                e.stopPropagation();
+                toggleSelection();
+            });
+        });
+    }
+
+    async function subscribeToModules() {
+        if (selectedModules.size === 0) return;
+
+        subscribeBtn.disabled = true;
+        subscribeBtn.classList.add('loading', 'loading-spinner');
+        const originalText = subscribeBtn.innerHTML;
+
+        try {
+            const response = await fetch('/api/misc-util', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    function: 'subscribe-modules',
+                    data: { moduleIds: Array.from(selectedModules) }
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.errors?.[0]?.message || 'Failed to subscribe');
+            }
+
+            const result = await response.json();
+            showToast(`Successfully subscribed to ${result.count} module(s)!`);
+
+            // Remove subscribed modules from the grid
+            selectedModules.forEach(moduleId => {
+                const card = document.querySelector(`[data-module-id="${moduleId}"]`);
+                if (card) {
+                    card.remove();
+                }
+            });
+
+            selectedModules.clear();
+            updateUI();
+
+            // Check if there are any modules left
+            if (modulesGrid && modulesGrid.children.length === 0) {
+                modulesGrid.innerHTML = `
+                    <div class="col-span-full p-2">
+                        <div class="alert alert-success shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">All Modules Subscribed</h3>
+                                <div class="text-sm">Your organization has now subscribed to all available modules.</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error subscribing to modules:', error);
+            if (errorState) errorState.classList.remove('hidden');
+            if (errorMessage) {
+                errorMessage.textContent = error instanceof Error ? error.message : 'Failed to subscribe to modules';
+            }
+        } finally {
+            subscribeBtn.innerHTML = originalText;
+            subscribeBtn.classList.remove('loading', 'loading-spinner');
+            subscribeBtn.disabled = selectedModules.size === 0;
+        }
+    }
+
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', subscribeToModules);
+    }
+
+    setupCardListeners();
+</script>
