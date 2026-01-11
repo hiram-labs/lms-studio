@@ -6,6 +6,8 @@ import { getCookieFromRequest } from "../../../libs/utils";
 import resendTraineeEmail from "./resend-trainee-email";
 import addTrainees from "./add-trainees";
 import recordDeviceOnboarding from "./record-device-onboarding";
+import subscribeModules from "./subscribe-modules";
+import unsubscribeModules from "./unsubscribe-modules";
 
 const miscUtilFuncMap: Record<
   TMiscUtilReqPayloadFunctions,
@@ -17,6 +19,8 @@ const miscUtilFuncMap: Record<
   "resend-trainee-email": resendTraineeEmail as any,
   "add-trainees": addTrainees as any,
   "record-device-onboarding": recordDeviceOnboarding as any,
+  "subscribe-modules": subscribeModules as any,
+  "unsubscribe-modules": unsubscribeModules as any,
 };
 
 export const POST: APIRoute = async ({ params, request }) => {

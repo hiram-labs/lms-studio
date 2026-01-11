@@ -1,4 +1,4 @@
-type TMiscUtilReqPayloadFunctions = "resend-trainee-email" | "add-trainees" | "record-device-onboarding";
+type TMiscUtilReqPayloadFunctions = "resend-trainee-email" | "add-trainees" | "record-device-onboarding" | "subscribe-modules" | "unsubscribe-modules";
 
 interface TMiscUtilReqPayloadData {
   "resend-trainee-email": {
@@ -15,6 +15,12 @@ interface TMiscUtilReqPayloadData {
     device_serial: string;
     device_model: string;
     device_manufacturer: string;
+  };
+  "subscribe-modules": {
+    moduleIds: string[];
+  };
+  "unsubscribe-modules": {
+    assignmentId: string;
   };
 }
 
