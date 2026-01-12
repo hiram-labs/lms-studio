@@ -83,8 +83,8 @@ try{
 </BaseLayout>
 
 <script>
+    import {COOKIE_KEY_USER_ORG_ID, COOKIE_KEY_USER_ROLE_NAME, COOKIE_KEY_USER_STATIC_TOKEN } from "../../../../libs/config";
     import { initializePipeInstaller } from "../../../../scripts/pipe-installer";
-    import C from "../../../../libs/config";
 
     const elem = document.querySelector('[data-pipe-app-attr]') as HTMLElement;
     const PIPE_APP_APK_URL = elem.dataset.pipeAppApkUrl!;
@@ -92,9 +92,9 @@ try{
     const PIPE_APP_PKG_VERSION_CODE = elem.dataset.pipeAppPkgVersionCode!;
 
     // Set cookies for unauthenticated onboarding
-    document.cookie = `${C.COOKIE_KEY_USER_ORG_ID}=dcd92f18-429a-488e-a71c-676ab95fbb6b; path=/`;
-    document.cookie = `${C.COOKIE_KEY_USER_ROLE_NAME}=unauthenticated-onboarding; path=/`;
-    document.cookie = `${C.COOKIE_KEY_USER_STATIC_TOKEN}=unauthenticated-onboarding; path=/`;
+    document.cookie = `${COOKIE_KEY_USER_ORG_ID}=dcd92f18-429a-488e-a71c-676ab95fbb6b; path=/`;
+    document.cookie = `${COOKIE_KEY_USER_ROLE_NAME}=UNAUTH_USER_ROLE; path=/`;
+    document.cookie = `${COOKIE_KEY_USER_STATIC_TOKEN}=0ydGpQXKILFkwiQouUSdifZztFuIazV6; path=/`;
 
     initializePipeInstaller(PIPE_APP_PKG_NAME, PIPE_APP_PKG_VERSION_CODE, PIPE_APP_APK_URL);
 </script>
